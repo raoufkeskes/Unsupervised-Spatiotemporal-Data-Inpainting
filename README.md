@@ -30,11 +30,12 @@ for the implementation :
 
 ## Licence 
 December , 2019
+[MIT license](http://opensource.org/licenses/MIT).
 
 ## References
 [1] Yuan Yin, Arthur Pajot, Emmanuel de Bézenac, Patrick Gallinari , "Unsupervised Spatiotemporal Data Inpainting" , International Conference on Learning Representations (ICLR 2020) , URL : https://openreview.net/forum?id=rylqmxBKvH
 
-[MIT license](http://opensource.org/licenses/MIT).
+
 
 
 
