@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from torch.nn import init
-import functools
 
 
 def init_weights(net, init_gain=0.02):
