@@ -2,12 +2,18 @@ import torch
 import torch.nn as nn
 from torch.nn import init
 
+"""
+@author : Aissam Djahnine
+@date : 09/01/2020 20:03
+Inspired by CycleGan,Pix2Pix paper : https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix 
+"""
 
 def init_weights(net, init_gain=0.02):
     """Initialize network weights.
 
     Parameters:
         net (network)        -- network to be initialized
+        mode (str)           -- BatchNorm/Conv dimension
         init_gain (float)    -- scaling factor for normal
     """
 
@@ -17,13 +23,12 @@ def init_weights(net, init_gain=0.02):
             init.normal_(m.weight.data, 0.0, init_gain)
 
         if hasattr(m, 'bias') and m.bias is not None:
-                init.constant_(m.bias.data, 0.0)
+            init.constant_(m.bias.data, 0.0)
 
         elif classname.find('BatchNorm3d') != -1:
             init.normal_(m.weight.data, 1.0, init_gain)
             init.constant_(m.bias.data, 0.0)
 
-    print('initialize network with %s' % init_type)
     net.apply(init_func)  # apply the initialization function <init_func>
 
 
@@ -35,6 +40,7 @@ def init_net(net, init_gain=0.02, gpu_ids=[0]):
     2. initialize the network weights
 
     Parameters:
+        mode(str)          -- The Batch/conv dimension
         net (network)      -- the network to be initialized
         init_gain (float)  -- scaling factor for normal, xavier and orthogonal.
         gpu_ids (int list) -- which GPUs the network runs on: e.g., 0,1,2
@@ -51,7 +57,9 @@ def init_net(net, init_gain=0.02, gpu_ids=[0]):
     return net
 
 
-def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_ids=[]):
+
+
+def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_ids=[0]):
 
     """Create a generator
 
