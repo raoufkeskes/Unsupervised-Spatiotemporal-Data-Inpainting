@@ -31,9 +31,9 @@ def readData(batch_size, path):
     :param
     batch_size (int): batch_size used during the forward pass to calculate the activations.
     path (string): full path this dataset location in the form of:
-                            ./data/images/img1.ext
-                            ./data/images/img2.ext
-                            ./data/images/img3.ext
+                            path_gen/images/img1.ext
+                            path_gen/images/img2.ext
+                            path_gen/images/img3.ext
     Where ./images is the only folder in ./data
     :returns
     A dataloder object
@@ -103,12 +103,12 @@ def getFID(path_real, path_gen, batch_size):
     the pre calculated mean and sigma of the real dataset.
     :param
     path_gen (string): full path the generated dataset  in the form of:
-                            ./data_gen/images/img1.ext
-                            ./data_gen/images/img2.ext
-                            ./data_gen/images/img3.ext
-    Where ./images is the only folder in ./data_gen
+                            path_gen/images/img1.ext
+                            path_gen/images/img2.ext
+                            path_gen/images/img3.ext
+    Where ./images is the only folder in path_gen
     path_real (string): full path to the real dataset in the a form same to path_gen. If there's another file with
-    extension .npz in the folder ./data_real, read and use the pre-calculated mu_real and sigma_real.
+    extension .npz in the folder path_real, read and use the pre-calculated mu_real and sigma_real.
     :returns
     fid (float): the Frechet Inception Distance = ||mu_1 - mu_2||^2 + Tr(sigma_1 + sigma_2 - 2*sqrt(sigma_1*sigma_2))
     """
@@ -156,5 +156,5 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', '-b', default=32, type=int, metavar='N', help='mini-batch size (default: 32)')
     args = parser.parse_args()
     fid = getFID(args.path_r, args.path_g, args.batch_size)
-    print("The Frechet Inception Distance is ", fid)
+    print("The Frechet Inception Distance is  %.2f." % fid)
     

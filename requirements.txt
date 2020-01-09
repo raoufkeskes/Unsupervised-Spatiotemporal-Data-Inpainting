@@ -1,0 +1,7 @@
+six
+tensorflow
+tqdm
+scipy
+numpy
+torchvision
+torch
