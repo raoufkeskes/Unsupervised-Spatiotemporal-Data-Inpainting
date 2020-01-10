@@ -6,13 +6,31 @@ Therefore , this repository is about the implementation of an ICLR 2020 accepted
 The main idea of the paper is **to inpaint occlusions on geophysical and natural videos sequencies in a fully unsupervised context** , where they introduce GANs paradigm in their architectures to solve this problem from a probabilistic viewpoint .
 
 ## Requirements
-
+- ffmpeg : ``` sudo install ffmpeg ``` 
 TO DO : List them 
 TO DO : Install them from a text file 
 
 ## Usage 
 
-TO DO 
+### Data 
+#### Download the data
+```bash Data/ALL_IN_ONE_data_downloader.sh``` to download everything at once ( **Note** : BAIR data size is +30GB , thus we recommend to not download it for the first time while testing the app and getting it touch with it ... )
+```bash Data/ALL_IN_ONE_data_downloader.sh FaceForensics KTH SST```
+#### Apply preprocessing + occlusions
+``` python Data/preprocess.py [Args]* ```
+Arguments are : 
+* ```--datasets```   : datasets to process    , **default = "FaceForensics,KTH"**
+* ```--occlusions``` : occlusions to perform  , **default = ""moving_bar,raindrops,remove_pixels""**
+
+OTHERS TO DO
+
+
+typical tree for datasets is : 
+Data --> datasets --> $dataset_name --> raw-data
+                                    --> occluded-data
+                                    --> resized-data
+                                    
+After doing the 2 steps cited above try to explore this folder for a better understanding of how the data is organized .
 
 ## Notes
 
