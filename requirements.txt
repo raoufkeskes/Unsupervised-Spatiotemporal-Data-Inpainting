@@ -5,3 +5,5 @@ scipy
 numpy
 torchvision
 torch
+face_recognition
+cv2
