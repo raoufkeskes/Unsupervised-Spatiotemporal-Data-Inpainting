@@ -6,8 +6,11 @@ Therefore , this repository is about the implementation of an ICLR 2020 accepted
 The main idea of the paper is **to inpaint occlusions on geophysical and natural videos sequencies in a fully unsupervised context** , where they introduce GANs paradigm in their architectures to solve this problem from a probabilistic viewpoint .
 
 ## Requirements
+
 - ffmpeg : ``` sudo install ffmpeg ``` 
+
 TO DO : List them 
+
 TO DO : Install them from a text file 
 
 ## Usage 
@@ -28,7 +31,7 @@ OTHERS TO DO
 
 
 typical tree for datasets is : 
-/Data/datasets/$dataset_name/
+```/Data/datasets/$dataset_name/```
 
                             |-- raw-data
                             
@@ -45,6 +48,7 @@ TO DO
 ## Experiments and results 
 
 TO DO paper
+
 TO DO ours ( if we have time ) 
 
 ## Proposed improvements 
