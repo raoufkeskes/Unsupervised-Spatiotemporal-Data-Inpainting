@@ -14,7 +14,9 @@ TO DO : Install them from a text file
 
 ### Data 
 #### Download the data
+
 ```bash Data/ALL_IN_ONE_data_downloader.sh``` to download everything at once ( **Note** : BAIR data size is +30GB , thus we recommend to not download it for the first time while testing the app and getting it touch with it ... )
+
 ```bash Data/ALL_IN_ONE_data_downloader.sh FaceForensics KTH SST```
 #### Apply preprocessing + occlusions
 ``` python Data/preprocess.py [Args]* ```
