@@ -28,9 +28,10 @@ OTHERS TO DO
 
 
 typical tree for datasets is : 
-Data --> datasets --> $dataset_name --> raw-data
-                                    --> occluded-data
-                                    --> resized-data
+/Data/datasets/$dataset_name/
+                            |-- raw-data
+                            |-- occluded-data
+                            |-- resized-data
                                     
 After doing the 2 steps cited above try to explore this folder for a better understanding of how the data is organized .
 
