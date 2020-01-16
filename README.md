@@ -29,9 +29,9 @@ python metrics/fid.py -pr path1 -pg path2
 ```
 OR 
 ```
-from metrics import fid
+import metrics as m
 
-fid_score = getFID(path_real, path_gen, batch_size)
+fid_score = m.fid.getFID(path_real, path_gen, batch_size)
 ```
 
 #### FVD: Frechet Video Distance
@@ -42,9 +42,9 @@ python metrics/fvd.py -pr path1 -pg path2
 ```
 OR 
 ```
-from metrics import fvd
+import metrics as m
 
-fvd_score = getFVD(path_real, path_gen)
+fvd_score = m.fvd.getFVD(path_real, path_gen)
 ```
 
 typical tree for datasets is : 
