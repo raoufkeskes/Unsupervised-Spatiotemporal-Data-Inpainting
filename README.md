@@ -26,9 +26,32 @@ TO DO : Install them from a text file
 Arguments are : 
 * ```--datasets```   : datasets to process    , **default = "FaceForensics,KTH"**
 * ```--occlusions``` : occlusions to perform  , **default = ""moving_bar,raindrops,remove_pixels""**
+### Metrics
+#### FID: Frechet Inception Distance
+calculate the the Frechet Inception Distance (FID) given the batch size and the two paths to the dataset. Or, path_real can be the pre calculated mean and sigma of the real dataset.
 
+```
+python metrics/fid.py -pr path1 -pg path2
+```
+OR 
+```
+from metrics import fid
+
+fid_score = getFID(path_real, path_gen, batch_size)
+```
+
+#### FVD: Frechet Video Distance
+calculate the the Frechet Video Distance (FVD) given the two paths to the dataset.
 OTHERS TO DO
+```
+python metrics/fvd.py -pr path1 -pg path2
+```
+OR 
+```
+from metrics import fvd
 
+fvd_score = getFVD(path_real, path_gen)
+```
 
 typical tree for datasets is : 
 ```/Data/datasets/$dataset_name/```
