@@ -152,16 +152,10 @@ def getVideos(path):
     return videos
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--path_r', '-pr', type=str, metavar='DIR', help='path to real dataset')
-    parser.add_argument('--path_g', '-pg', type=str, metavar='DIR', help='path to generated dataset')
-    args = parser.parse_args()
-    real_videos = getVideos(args.path_r)
-    gen_videos = getVideos(args.path_g)
-    print(real_videos.shape, gen_videos.shape)
+def getFVD(path_real, path_gen):
+    real_videos = getVideos(path_real)
+    gen_videos = getVideos(path_gen)
     with tf.Graph().as_default():
-
         real_videos = tf.convert_to_tensor(real_videos)
         gen_videos = tf.convert_to_tensor(gen_videos)
         result = calculate_fvd(
@@ -169,6 +163,15 @@ if __name__ == "__main__":
             create_id3_embedding(preprocess(gen_videos, (224, 224))))
 
         with tf.Session() as sess:
-          sess.run(tf.global_variables_initializer())
-          sess.run(tf.tables_initializer())
-          print("FVD is: %.2f." % sess.run(result))
+            sess.run(tf.global_variables_initializer())
+            sess.run(tf.tables_initializer())
+            ress = sess.run(result)
+            print("FVD is: %.2f." % ress)
+    return ress
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--path_r', '-pr', type=str, metavar='DIR', help='path to real dataset')
+    parser.add_argument('--path_g', '-pg', type=str, metavar='DIR', help='path to generated dataset')
+    args = parser.parse_args()
+    fvd_score = getFVD(args.path_r, args.path_g)
