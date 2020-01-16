@@ -1,7 +1,8 @@
-# Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized / DLL files / log files
 __pycache__/
 *.py[cod]
 *$py.class
+wget-log*
 
 
 
@@ -9,7 +10,7 @@ __pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-
+*.ipynb
 
 # Pycharm
 

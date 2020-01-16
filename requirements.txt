@@ -4,6 +4,8 @@ tqdm
 scipy
 numpy
 torchvision
-torch
+pytorch
 face_recognition
 cv2
+ffmpeg
+pyyaml

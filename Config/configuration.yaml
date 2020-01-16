@@ -1,0 +1,9 @@
+
+global :
+  root          : /home/raouf/Desktop/AMAL/Project/Unsupervised-Spatiotemporal-Data-Inpainting
+  output_width  : 64
+  output_height : 64
+
+
+FaceForensics :
+  extend : 60
