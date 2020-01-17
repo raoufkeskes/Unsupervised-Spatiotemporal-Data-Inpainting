@@ -1,62 +1,16 @@
 import torch
 import torch.nn as nn
-from torch.nn import init
+from utils import *
+import numpy as np
 """
 @author : Aissam Djahnine
-@date : 09/01/2020 20:03
+@date : 17/01/2020 02:39
 Inspired by CycleGan,Pix2Pix paper : https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix 
 """
 
-def init_weights(net, mode, init_gain=0.02):
-    """Initialize network weights.
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    Parameters:
-        net (network)        -- network to be initialized
-        mode (str)           -- BatchNorm/Conv dimension
-        init_gain (float)    -- scaling factor for normal
-    """
-
-    def init_func(m):  # define the initialization function
-        classname = m.__class__.__name__
-        if hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
-            init.normal_(m.weight.data, 0.0, init_gain)
-
-        if hasattr(m, 'bias') and m.bias is not None:
-            init.constant_(m.bias.data, 0.0)
-
-        elif classname.find('BatchNorm'+mode+'d') != -1:
-            init.normal_(m.weight.data, 1.0, init_gain)
-            init.constant_(m.bias.data, 0.0)
-
-    net.apply(init_func)  # apply the initialization function <init_func>
-
-
-def init_net(net, mode, init_gain=0.02, gpu_ids=[0]):
-
-    """Initialize a network:
-
-    1. register CPU/GPU device (with multi-GPU support);
-    2. initialize the network weights
-
-    Parameters:
-        mode(str)          -- The Batch/conv dimension
-        net (network)      -- the network to be initialized
-        init_gain (float)  -- scaling factor for normal, xavier and orthogonal.
-        gpu_ids (int list) -- which GPUs the network runs on: e.g., 0,1,2
-
-    Return an initialized network.
-    """
-
-    if len(gpu_ids) > 0:
-        assert(torch.cuda.is_available())
-        net.to(gpu_ids[0])
-        net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
-    init_weights(net, mode, init_gain=init_gain)
-
-    return net
-
-
-def define_D(mode, input_nc, ndf, init_gain=0.02, gpu_ids=[0]):
+def define_D(mode, input_nc, ndf, init_gain=0.02, gpu_ids=[device]):
     """Create a 'PatchGAN' discriminator
 
     Parameters:
@@ -70,7 +24,7 @@ def define_D(mode, input_nc, ndf, init_gain=0.02, gpu_ids=[0]):
     """
     net = NLayerDiscriminator(mode, input_nc, ndf)
 
-    return init_net(net,mode, init_gain, gpu_ids)
+    return init_net(net, mode, init_gain, gpu_ids)
 
 
 class NLayerDiscriminator(nn.Module):
@@ -80,9 +34,9 @@ class NLayerDiscriminator(nn.Module):
         """Construct a PatchGAN discriminator
 
         Parameters:
+            mode (str)      -- BatchNorm/conv dimension
             input_nc (int)  -- the number of channels in input images
             ndf (int)       -- the number of filters in the last conv layer
-            norm_layer      -- normalization layer
         """
         super(NLayerDiscriminator, self).__init__()
 
@@ -94,7 +48,7 @@ class NLayerDiscriminator(nn.Module):
         map = 1
         map_update = 1
 
-        for n in range(1, 3):
+        for n in range(1,4):
             map_update = map
             map = min(2 ** n, 8)
             model += [
@@ -105,14 +59,66 @@ class NLayerDiscriminator(nn.Module):
 
         for n in range(2):
             model += [
-                eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=1, padding=1, bias=use_bias),
+                eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=2, padding=1, bias=use_bias),
                 eval("nn.BatchNorm"+mode+"d")(ndf * map),
                 nn.LeakyReLU(0.2, True)
                  ]
 
-        model += [eval("nn.Conv"+mode+"d")(ndf * map, 1, kernel_size=3, stride=1, padding=1)]  # output 1 channel prediction map
+        model += [eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=1, padding=1)]
+        model += [eval("nn.Conv"+mode+"d")(ndf * map, 1, kernel_size=3, stride=1, padding=1)]
+
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
         """Standard forward"""
         return self.model(input)
+
+if __name__ == '__main__':
+
+    ## test Discriminator :
+
+    ## input tensors for Df, Ds :
+
+    # Define input for df :
+    input_df = torch.rand((2, 3, 64, 64)).to(device)     # input = Batch_size , channels, width , height
+    print(' The input shape for df is : {}'.format(input_df.shape))
+
+    # Define input for ds :
+    input_ds = torch.rand((2, 3, 15, 64, 64)).to(device)     # input = Batch_size , channels, frames, width , height
+    print(' The input shape for ds is : {}'.format(input_ds.shape))
+
+
+    # create instance of Discriminator(ds,df) with define_D, set the mode to '2','3', ndf = 32 :
+
+    netD2 = define_D('2', 3, 64) # df
+
+    netD3 = define_D('3', 3, 64) # ds
+
+    # check whether the model is on GPU , this function returns a boolean :
+    print(' The model --mode : {} is on GPU : {}'.format(2, next(netD2.parameters()).is_cuda))
+    print(' The model --mode : {} is on GPU : {}'.format(3, next(netD3.parameters()).is_cuda))
+
+    # Compute the output :
+    output_df = netD2(input_df)
+    output_ds = netD3(input_ds)
+
+    # check the output of netD2 : output=[batch_size, 1 , 1 , 1]
+    print(' The output shape for df is : {}'.format(output_df.shape))
+
+    # check the output of netD2 : output=[batch_size, 1 , N , N] , N is calculated via the receptive field and it depends on image' size
+
+    print(' The output shape for ds is : {}'.format(output_ds.shape))
+
+
+    # calculate number of parameters for df,ds :
+    model_parameters_df = filter(lambda p: p.requires_grad, netD2.parameters())
+    model_parameters_ds = filter(lambda p: p.requires_grad, netD3.parameters())
+
+    params_df = sum([np.prod(p.size()) for p in model_parameters_df])
+    params_ds = sum([np.prod(p.size()) for p in model_parameters_ds])
+
+    print('Number of Parameters for Df is : {}'.format(params_df))
+    print('Number of Parameters for Ds is : {}'.format(params_ds))
+
+
+

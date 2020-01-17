@@ -1,75 +1,32 @@
 import torch
 import torch.nn as nn
-from torch.nn import init
+import numpy as np
+import torch.backends.cudnn as cudnn
+import torch.nn.parallel
+from utils import *
+
 
 """
 @author : Aissam Djahnine
-@date : 09/01/2020 20:03
+@date : 17/01/2020 02:39
 Inspired by CycleGan,Pix2Pix paper : https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix 
 """
 
-def init_weights(net, init_gain=0.02):
-    """Initialize network weights.
-
-    Parameters:
-        net (network)        -- network to be initialized
-        mode (str)           -- BatchNorm/Conv dimension
-        init_gain (float)    -- scaling factor for normal
-    """
-
-    def init_func(m):  # define the initialization function
-        classname = m.__class__.__name__
-        if hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
-            init.normal_(m.weight.data, 0.0, init_gain)
-
-        if hasattr(m, 'bias') and m.bias is not None:
-            init.constant_(m.bias.data, 0.0)
-
-        elif classname.find('BatchNorm3d') != -1:
-            init.normal_(m.weight.data, 1.0, init_gain)
-            init.constant_(m.bias.data, 0.0)
-
-    net.apply(init_func)  # apply the initialization function <init_func>
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 
-def init_net(net, init_gain=0.02, gpu_ids=[0]):
-
-    """Initialize a network:
-
-    1. register CPU/GPU device (with multi-GPU support);
-    2. initialize the network weights
-
-    Parameters:
-        mode(str)          -- The Batch/conv dimension
-        net (network)      -- the network to be initialized
-        init_gain (float)  -- scaling factor for normal, xavier and orthogonal.
-        gpu_ids (int list) -- which GPUs the network runs on: e.g., 0,1,2
-
-    Return an initialized network.
-    """
-
-    if len(gpu_ids) > 0:
-        assert(torch.cuda.is_available())
-        net.to(gpu_ids[0])
-        net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
-    init_weights(net, init_gain=init_gain)
-
-    return net
-
-
-
-
-def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_ids=[0]):
+def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_ids=[device], mode='3'):
 
     """Create a generator
 
     Parameters:
-        input_nc (int) -- the number of channels in input images
-        output_nc (int) -- the number of channels in output images
-        ngf (int) -- the number of filters in the last conv layer
-        norm (str) -- the name of normalization layers used in the network: 3D batch
-        init_gain (float)  -- scaling factor for normal
-        gpu_ids (int list) -- which GPUs the network runs on: e.g., 0,1,2
+        input_nc (int)        -- the number of channels in input images
+        output_nc (int)       -- the number of channels in output images
+        ngf (int)             -- the number of filters in the last conv layer
+        norm (str)            -- the name of normalization layers used in the network: 3D batch
+        init_gain (float)     -- scaling factor for normal
+        gpu_ids (int list)    -- which GPUs the network runs on: e.g., 0,1,2
+        mode (str)            -- BatchNorm/conv dimension
 
     Returns a generator
     """
@@ -77,7 +34,7 @@ def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_
     norm_layer = norm
     net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer)
 
-    return init_net(net, init_gain, gpu_ids)
+    return init_net(net, mode, init_gain,gpu_ids)
 
 
 def build_conv_block(dim_in, dim_out, norm_layer, use_bias=False):
@@ -183,7 +140,7 @@ class SelfAttention(nn.Module):
 
 class ResnetGenerator(nn.Module):
 
-    def __init__(self, input_nc=3, output_nc=3, ngf=32, norm_layer=nn.BatchNorm3d,use_bias=False):
+    def __init__(self, input_nc=3, output_nc=3, ngf=64, norm_layer=nn.BatchNorm3d, use_bias=False):
         """Construct a Resnet-based generator
 
         Parameters:
@@ -192,15 +149,6 @@ class ResnetGenerator(nn.Module):
             ngf (int)           -- the number of filters in the last conv layer
             norm_layer          -- normalization layer
         """
-
-        ## Encoder ( 3 3D-Resnet block )
-
-        ## Decoder ( 3 3D-Resnet block
-        #             Spatial Self-Attention
-        #             3D-Resnet block
-        #             3D Batch Norm + RelU
-        #             3D Conv
-        #          )
 
         super(ResnetGenerator, self).__init__()
 
@@ -232,6 +180,30 @@ class ResnetGenerator(nn.Module):
 
     def forward(self, input):
         """<forward>"""
-        return self.model(input).cuda()
+        return self.model(input)
+
+
+if __name__ == '__main__':
+    ## test Generator :
+
+    # Define input for generator :
+    input_g = torch.rand((1, 3, 15, 64, 64)).to(device)  # input =[Batch_size , channels, frames width , height]
+    print(' The input shape is : {}'.format(input_g.shape))
+
+    # create instance of generator with define_G , ndf = 32 :
+    netG = define_G(3, 3, 64)
+    # check whether the model is on GPU , this function returns a boolean :
+    print(' The model is on GPU : {}'.format(next(netG.parameters()).is_cuda))
+
+    # Compute the output :
+    output_g = netG(input_g)
+
+    # check the output of netG : output = [Batch_size , channels, frames width , height]
+    print(' The output shape is : {}'.format(output_g.shape))
+
+    # calculate number of parameters for generator :
+    model_parameters = filter(lambda p: p.requires_grad, netG.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print('Number of Parameters is : {}'.format(params))
 
 
