@@ -1,7 +1,11 @@
 import torch
 import torch.nn as nn
+<<<<<<< HEAD
 from utils import *
 from torch.nn.utils import spectral_norm
+=======
+from models.utils import *
+>>>>>>> d2af9a56a386739ffe96e09c8e5fe7817a2107aa
 import numpy as np
 """
 @author : Aissam Djahnine
@@ -74,6 +78,7 @@ class NLayerDiscriminator(nn.Module):
         """Standard forward"""
         return self.model(input)
 
+
 if __name__ == '__main__':
 
     ## test Discriminator :
@@ -112,14 +117,9 @@ if __name__ == '__main__':
 
 
     # calculate number of parameters for df,ds :
-    model_parameters_df = filter(lambda p: p.requires_grad, netD2.parameters())
-    model_parameters_ds = filter(lambda p: p.requires_grad, netD3.parameters())
 
-    params_df = sum([np.prod(p.size()) for p in model_parameters_df])
-    params_ds = sum([np.prod(p.size()) for p in model_parameters_ds])
-
-    print('Number of Parameters for Df is : {}'.format(params_df))
-    print('Number of Parameters for Ds is : {}'.format(params_ds))
+    print('Number of Parameters for Df is : {}'.format(sum(p.numel() for p in netD2.parameters())))
+    print('Number of Parameters for Ds is : {}'.format(sum(p.numel() for p in netD3.parameters())))
 
 
 

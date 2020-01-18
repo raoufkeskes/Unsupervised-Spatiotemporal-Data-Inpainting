@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 from torch.nn.utils import spectral_norm
 import torch.nn.parallel
-from utils import *
+from models.utils import *
 
 
 """
@@ -202,8 +202,7 @@ if __name__ == '__main__':
     print(' The output shape is : {}'.format(output_g.shape))
 
     # calculate number of parameters for generator :
-    model_parameters = filter(lambda p: p.requires_grad, netG.parameters())
-    params = sum([np.prod(p.size()) for p in model_parameters])
-    print('Number of Parameters is : {}'.format(params))
+
+    print('Number of Parameters is : {}'.format(sum(p.numel() for p in netG.parameters())))
 
 
