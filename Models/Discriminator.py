@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
 from utils import *
+from torch.nn.utils import spectral_norm
 import numpy as np
 """
 @author : Aissam Djahnine
-@date : 17/01/2020 02:39
+@date : 18/01/2020 01:27
 Inspired by CycleGan,Pix2Pix paper : https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix 
 """
 
@@ -40,7 +41,7 @@ class NLayerDiscriminator(nn.Module):
         """
         super(NLayerDiscriminator, self).__init__()
 
-        model = [eval("nn.Conv"+mode+"d")(input_nc, ndf, kernel_size=3, stride=2, padding=1),
+        model = [spectral_norm(eval("nn.Conv"+mode+"d")(input_nc, ndf, kernel_size=3, stride=2, padding=1)),
                  eval("nn.BatchNorm"+mode+"d")(ndf),
                  nn.LeakyReLU(0.2, True)
                 ]
@@ -52,20 +53,20 @@ class NLayerDiscriminator(nn.Module):
             map_update = map
             map = min(2 ** n, 8)
             model += [
-                eval("nn.Conv"+mode+"d")(ndf * map_update, ndf * map, kernel_size=3, stride=2, padding=1, bias=use_bias),
+                spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map_update, ndf * map, kernel_size=3, stride=2, padding=1, bias=use_bias)),
                 eval("nn.BatchNorm"+mode+"d")(ndf * map),
                 nn.LeakyReLU(0.2, True)
             ]
 
         for n in range(2):
             model += [
-                eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=2, padding=1, bias=use_bias),
+                spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=2, padding=1, bias=use_bias)),
                 eval("nn.BatchNorm"+mode+"d")(ndf * map),
                 nn.LeakyReLU(0.2, True)
                  ]
 
-        model += [eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=1, padding=1)]
-        model += [eval("nn.Conv"+mode+"d")(ndf * map, 1, kernel_size=3, stride=1, padding=1)]
+        model += [spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=1, padding=1))]
+        model += [spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map, 1, kernel_size=3, stride=1, padding=1))]
 
         self.model = nn.Sequential(*model)
 

@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import torch.backends.cudnn as cudnn
+from torch.nn.utils import spectral_norm
 import torch.nn.parallel
 from utils import *
 
 
 """
 @author : Aissam Djahnine
-@date : 17/01/2020 02:39
+@date : 18/01/2020 01:27
 Inspired by CycleGan,Pix2Pix paper : https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix 
 """
 
@@ -52,12 +52,12 @@ def build_conv_block(dim_in, dim_out, norm_layer, use_bias=False):
 
     conv_block = []
 
-    conv_block += [nn.Conv3d(dim_in, dim_out, kernel_size=3, stride=1, padding=1, bias=use_bias),
+    conv_block += [spectral_norm(nn.Conv3d(dim_in, dim_out, kernel_size=3, stride=1, padding=1, bias=use_bias)),
                    norm_layer(dim_out),
                    nn.ReLU(True)
                    ]
 
-    conv_block += [nn.Conv3d(dim_out, dim_out, kernel_size=3, stride=1, padding=1, bias=use_bias),
+    conv_block += [spectral_norm(nn.Conv3d(dim_out, dim_out, kernel_size=3, stride=1, padding=1, bias=use_bias)),
                    norm_layer(dim_out)
                    ]
 
@@ -80,7 +80,7 @@ class ResnetBlock(nn.Module):
         super(ResnetBlock, self).__init__()
 
         self.conv_block = build_conv_block(dim_in, dim_out, norm_layer, use_bias=False)
-        self.conv_identity = nn.Conv3d(dim_in, dim_out, kernel_size=1, padding=0, bias=use_bias)
+        self.conv_identity = spectral_norm(nn.Conv3d(dim_in, dim_out, kernel_size=1, padding=0, bias=use_bias))
 
     def forward(self, x):
         """Forward function (with skip connections)"""
@@ -98,9 +98,9 @@ class SelfAttention(nn.Module):
         super(SelfAttention, self).__init__()
         self.chanel_in = in_dim
 
-        self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1)  # g(x)
-        self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1)    # f(x)
-        self.value_conv = nn.Conv2d(in_channels=in_dim, out_channels=in_dim, kernel_size=1)       # h(x)
+        self.query_conv = spectral_norm(nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1))  # g(x)
+        self.key_conv = spectral_norm(nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1))    # f(x)
+        self.value_conv = spectral_norm(nn.Conv2d(in_channels=in_dim, out_channels=in_dim, kernel_size=1))       # h(x)
 
         # Scale factor
         self.gamma = nn.Parameter(torch.zeros(1))
@@ -172,7 +172,7 @@ class ResnetGenerator(nn.Module):
                   nn.ReLU(True)
                   ]
 
-        model += [nn.Conv3d(ngf, output_nc, kernel_size=3, stride=1, padding=1, bias=use_bias),
+        model += [spectral_norm(nn.Conv3d(ngf, output_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)),
                   nn.Tanh()
                   ]
 
