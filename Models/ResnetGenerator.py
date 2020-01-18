@@ -119,7 +119,7 @@ class SelfAttention(nn.Module):
         # reshaping x to [ batch_size* , nc , width , height ]
         x = x.view(-1, nc, width, height)
 
-        m_batch_size,nc, width, height = x.size()
+        m_batch_size, nc, width, height = x.size()
 
         query = self.query_conv(x).view(m_batch_size, -1, width * height).permute(0, 2, 1)  # B X C X N
         key = self.key_conv(x).view(m_batch_size, -1, width * height)                       # B X C x N
@@ -148,6 +148,7 @@ class ResnetGenerator(nn.Module):
             output_nc (int)     -- the number of channels_out in output images
             ngf (int)           -- the number of filters in the last conv layer
             norm_layer          -- normalization layer
+            use_bias (bool)     -- if the conv layer uses bias or not
         """
 
         super(ResnetGenerator, self).__init__()

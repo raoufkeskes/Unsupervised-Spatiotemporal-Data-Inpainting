@@ -1,11 +1,7 @@
 import torch
 import torch.nn as nn
-<<<<<<< HEAD
-from utils import *
 from torch.nn.utils import spectral_norm
-=======
 from models.utils import *
->>>>>>> d2af9a56a386739ffe96e09c8e5fe7817a2107aa
 import numpy as np
 """
 @author : Aissam Djahnine
@@ -42,6 +38,7 @@ class NLayerDiscriminator(nn.Module):
             mode (str)      -- BatchNorm/conv dimension
             input_nc (int)  -- the number of channels in input images
             ndf (int)       -- the number of filters in the last conv layer
+            use_bias (bool)     -- if the conv layer uses bias or not
         """
         super(NLayerDiscriminator, self).__init__()
 
@@ -114,7 +111,6 @@ if __name__ == '__main__':
     # check the output of netD2 : output=[batch_size, 1 , N , N] , N is calculated via the receptive field and it depends on image' size
 
     print(' The output shape for ds is : {}'.format(output_ds.shape))
-
 
     # calculate number of parameters for df,ds :
 
