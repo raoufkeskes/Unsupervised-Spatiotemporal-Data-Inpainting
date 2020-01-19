@@ -8,18 +8,20 @@ The main idea of the paper is **to inpaint occlusions on geophysical and natural
 ## Requirements
 ``` pip install -r requirements.txt ```
 ## Usage 
+starting 
+1) ```git clone https://github.com/raoufkeskes/Unsupervised-Spatiotemporal-Data-Inpainting.git```
+2) ```cd Unsupervised-Spatiotemporal-Data-Inpainting```
 
 ### Data 
-#### Download the data
+the data will be stored on a folder ```datasets``` external to the project repo folder to avoid missleading pushes 
+```
+ parent directory
+    ├── Unsupervised-Spatiotemporal-Data-Inpainting (our repo) 
+    └── datasets
+```
+* **FaceForensics** : download original videos (1000 youtube videos) and apply face recognition 
+```  bash data/scripts/download_preprocess_FaceForensics.sh ```
 
-```bash Data/ALL_IN_ONE_data_downloader.sh``` to download everything at once ( **Note** : BAIR data size is +30GB , thus we recommend to not download it for the first time while testing the app and getting it touch with it ... )
-
-```bash Data/ALL_IN_ONE_data_downloader.sh FaceForensics KTH SST```
-#### Apply preprocessing + occlusions
-``` python Data/preprocess.py [Args]* ```
-Arguments are : 
-* ```--datasets```   : datasets to process    , **default = "FaceForensics,KTH"**
-* ```--occlusions``` : occlusions to perform  , **default = ""moving_bar,raindrops,remove_pixels""**
 ### Metrics
 #### FID: Frechet Inception Distance
 calculate the the Frechet Inception Distance (FID) given the batch size and the two paths to the dataset. Or, path_real can be the pre calculated mean and sigma of the real dataset.
@@ -47,17 +49,8 @@ import metrics as m
 fvd_score = m.fvd.getFVD(path_real, path_gen)
 ```
 
-typical tree for datasets is : 
-```/Data/datasets/$dataset_name/```
 
-                            |-- raw-data
-                            
-                            |-- occluded-data
-                            
-                            |-- resized-data
-                                    
-After doing the 2 steps cited above try to explore this folder for a better understanding of how the data is organized .
-
+                                 
 ## Notes
 
 TO DO

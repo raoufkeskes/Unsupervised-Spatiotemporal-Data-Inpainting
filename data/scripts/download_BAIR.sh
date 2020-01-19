@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Created by raouf at 19/01/2020
+
 # BAIR
 TARGET_DIR=./datasets/BAIR/raw-data
 mkdir -p ${TARGET_DIR}

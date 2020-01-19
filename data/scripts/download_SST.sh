@@ -1,7 +1,9 @@
 #!/bin/bash
 
-#SST 
+# Created by raouf at 19/01/2020
 
+
+#SST
 # credentials for SST data
 USERNAME="akeskes"
 PASSWORD="Amal_Project2020"

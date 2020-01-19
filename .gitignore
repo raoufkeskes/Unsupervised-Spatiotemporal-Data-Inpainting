@@ -13,7 +13,6 @@ wget-log*
 *.ipynb
 
 # Pycharm
-
 .idea
 
 # large data
