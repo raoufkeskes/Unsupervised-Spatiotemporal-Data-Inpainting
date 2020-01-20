@@ -3,7 +3,7 @@
 # Created by raouf at 19/01/2020
 
 # BAIR
-TARGET_DIR=./datasets/BAIR/raw-data
+TARGET_DIR=./datasets/BAIR
 mkdir -p ${TARGET_DIR}
 
 FILENAME="bair_robot_pushing_dataset_v0.tar"
@@ -19,8 +19,10 @@ echo ''
 
 #wget -nc -O ${FILENAME} "${BASE_URL}/${FILENAME}"
 
-tar -xvf ${FILENAME} --strip-components=1 -C "${TARGET_DIR}"
+tar -xvf ${FILENAME} "${TARGET_DIR}"
 #rm -f ${FILENAME}
+mv ${TARGET_DIR}/softmotion30_44k/* ${TARGET_DIR}
+
 
 echo '------------'
 echo 'BAIR  DONE !'

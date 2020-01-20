@@ -6,6 +6,8 @@ from torch.utils.data import Dataset
 import torch
 import numpy as np
 import cv2
+from PIL import Image
+
 
 # utils
 import os
@@ -33,6 +35,8 @@ class MotherDataset(Dataset):
         """
 
         # complete video Tensor
+
+
         X = self.read_video(self.filenames[idx])
         # select one occlusion type
         occlusion_idx = np.random.randint(low=0, high=len(self.occlusions))
@@ -49,7 +53,7 @@ class MotherDataset(Dataset):
         """
         return len(self.filenames)
 
-    def read_video(self, filename):
+    def read_video(self, filename ):
         """
         :param filename: String filename  ( NOT THE COMPLETE PATH ! )
         :return: video clip Tensor(nb_frames x C x H x W)
@@ -57,40 +61,55 @@ class MotherDataset(Dataset):
         """
         # Open the input movie file
         input_movie = cv2.VideoCapture(self.root_dir + filename)
-        frame_number = 0
+        total_nbr_frames = int( input_movie.get( cv2.CAP_PROP_FRAME_COUNT ) )
+        # select a starting index to extract a slice
+        start_idx = np.random.randint( low=0, high=total_nbr_frames - self.nb_frames )
         # iterate over frames
         raw_video = []
+
+        nbr_read_frames = 0
         while True:
+
             # Grab a single frame of video
             ret, frame = input_movie.read()
-            frame_number += 1
+            nbr_read_frames += 1
 
             # Quit when the input video file ends
             if not ret:
                 break
 
+            # we did not seek the starting index for our clip
+            if start_idx > (nbr_read_frames-1) :
+                continue
+            # if it is the end of the video clip slice  stop reading
+            if ( (start_idx + self.nb_frames+1 ) == nbr_read_frames ):
+                break
+
             # Convert the image from BGR color (which OpenCV uses) to RGB color
             # Reorder to Channels x Width x Height
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-            if ( self.transform) :
-                # default  ToTensor
-                frame = self.transform(frame)
+            if (self.transform) :
+                frame = self.transform(Image.fromarray(frame,"RGB"))
 
             # add to video tensor
             raw_video.append(frame.unsqueeze(0))
-
         # concatenate all frames
         raw_video = torch.cat(raw_video)
 
-        # select a starting index to extract a slice
-        start_idx = np.random.randint( low=0, high=raw_video.shape[0]-self.nb_frames )
 
-        return raw_video[start_idx:start_idx+self.nb_frames]
+        return raw_video
 
 
 
 class FaceForensics_Dataset(MotherDataset):
+    """
+    FaceForensics Dataset class
+    """
+    def __init__(self, root_dir, transform , occlusions=None , nb_frames=35  ):
+        super().__init__( root_dir, transform , occlusions=occlusions , nb_frames=nb_frames )
+        self.filenames = os.listdir(root_dir)
+
+class KTH_Dataset(MotherDataset):
     """
     FaceForensics Dataset class
     """

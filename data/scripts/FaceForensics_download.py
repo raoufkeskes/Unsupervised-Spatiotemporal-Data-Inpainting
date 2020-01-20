@@ -235,7 +235,7 @@ def main(args):
         # Else: models for deepfakes
         else:
             if dataset != 'Deepfakes' and c_type == 'models':
-                print('Models only available for Deepfakes. Aborting')
+                print('models only available for Deepfakes. Aborting')
                 return
             dataset_output_path = join(output_path, dataset_path, c_type)
             print('Output path: {}'.format(dataset_output_path))

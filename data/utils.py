@@ -1,20 +1,19 @@
 # Created by raouf at 19/01/2020
 
 from torch.utils.data import DataLoader, SubsetRandomSampler
-from data.datasets   import FaceForensics_Dataset
+from data.datasets   import FaceForensics_Dataset , KTH_Dataset
 import torch
 import cv2
 import os
 import numpy as np
 
 
-def getDataloaders( root , transform  , occlusions=None , nb_frames=35 , mask_code = -100, batch_size = 4 , val_size=0.05 , test_size=0.05 ):
+def getDataloaders( root , transform  , occlusions=None , nb_frames=35 , batch_size = 4 , val_size=0.05 , test_size=0.05 ):
     """
     :param root        : String => root directory of the dataset
     :param transform   : torchvision.transforms.Compose(transforms) ==> https://pytorch.org/docs/stable/torchvision/transforms.html
     :param occlusions  : list of occlusions objects ==> Ex [raindrops_obj,remove_pixel_obj]
     :param nb_frames   : int  ==> number of frames for videos ( nb_frames x C x H x W )
-    :param mask_code   : int  ==> the mask code Ex = -100 ( use negative values )
     :param batch_size  : int  ==> batch size Ex 4
     :param val_size    : float==> in [0,1]
     :param test_size   : float==> in [0,1]
@@ -27,7 +26,7 @@ def getDataloaders( root , transform  , occlusions=None , nb_frames=35 , mask_co
     elif "BAIR" in root:
         pass
     elif "KTH" in root :
-        pass
+        dataset = KTH_Dataset(root, transform, occlusions=occlusions, nb_frames=nb_frames)
     elif "SST" in root :
         pass
 
@@ -92,4 +91,6 @@ def write_video(video_tensor, out_dir, filename, fps = 30.0 ,occlusion_color=255
 
     movie.release()
     cv2.destroyAllWindows()
+
+
 
