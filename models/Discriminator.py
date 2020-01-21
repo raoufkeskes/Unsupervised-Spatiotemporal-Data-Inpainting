@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils import spectral_norm
 from models.utils import *
-import numpy as np
+
 """
 @author : Aissam Djahnine
 @date : 18/01/2020 01:27
@@ -78,24 +78,19 @@ class NLayerDiscriminator(nn.Module):
 
 if __name__ == '__main__':
 
-    ## test Discriminator :
-
-    ## input tensors for Df, Ds :
+    # test Discriminator :
 
     # Define input for df :
     input_df = torch.rand((2, 3, 64, 64)).to(device)     # input = Batch_size , channels, width , height
     print(' The input shape for df is : {}'.format(input_df.shape))
 
     # Define input for ds :
-    input_ds = torch.rand((2, 3, 15, 64, 64)).to(device)     # input = Batch_size , channels, frames, width , height
+    input_ds = torch.rand((4, 3, 35, 64, 64)).to(device)     # input = Batch_size , channels, frames, width , height
     print(' The input shape for ds is : {}'.format(input_ds.shape))
 
-
     # create instance of Discriminator(ds,df) with define_D, set the mode to '2','3', ndf = 32 :
-
-    netD2 = define_D('2', 3, 64) # df
-
-    netD3 = define_D('3', 3, 64) # ds
+    netD2 = define_D('2', 3, 64)  #df
+    netD3 = define_D('3', 3, 64)  #ds
 
     # check whether the model is on GPU , this function returns a boolean :
     print(' The model --mode : {} is on GPU : {}'.format(2, next(netD2.parameters()).is_cuda))
@@ -105,15 +100,11 @@ if __name__ == '__main__':
     output_df = netD2(input_df)
     output_ds = netD3(input_ds)
 
-    # check the output of netD2 : output=[batch_size, 1 , 1 , 1]
+    # check the output of netD2 , netD3 : output=[batch_size, 1 , 1 , 1]
     print(' The output shape for df is : {}'.format(output_df.shape))
-
-    # check the output of netD2 : output=[batch_size, 1 , N , N] , N is calculated via the receptive field and it depends on image' size
-
     print(' The output shape for ds is : {}'.format(output_ds.shape))
 
     # calculate number of parameters for df,ds :
-
     print('Number of Parameters for Df is : {}'.format(sum(p.numel() for p in netD2.parameters())))
     print('Number of Parameters for Ds is : {}'.format(sum(p.numel() for p in netD3.parameters())))
 

@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import numpy as np
 from torch.nn.utils import spectral_norm
 import torch.nn.parallel
 from models.utils import *
@@ -8,7 +7,7 @@ from models.utils import *
 
 """
 @author : Aissam Djahnine
-@date : 18/01/2020 01:27
+@date : 21/01/2020 02:18
 Inspired by CycleGan,Pix2Pix paper : https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix 
 """
 
@@ -32,60 +31,42 @@ def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_
     """
 
     norm_layer = norm
-    net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer)
+    net = ResnetGenerator(input_nc, output_nc, ngf,norm_layer)
 
     return init_net(net, mode, init_gain,gpu_ids)
 
 
-def build_conv_block(dim_in, dim_out, norm_layer, use_bias=False):
-
-    """Construct a convolutional block.
-
-    Parameters:
-        dim_in (int)        -- the number of channels_in in the conv layer.
-        dim_out (int)       -- the number of channels_out in the conv layer.
-        norm_layer          -- normalization layer
-        use_bias (bool)     -- if the conv layer uses bias or not
-
-    Returns a conv block (with a conv layer, a normalization layer, and a non-linearity layer (ReLU))
-    """
-
-    conv_block = []
-
-    conv_block += [spectral_norm(nn.Conv3d(dim_in, dim_out, kernel_size=3, stride=1, padding=1, bias=use_bias)),
-                   norm_layer(dim_out),
-                   nn.ReLU(True)
-                   ]
-
-    conv_block += [spectral_norm(nn.Conv3d(dim_out, dim_out, kernel_size=3, stride=1, padding=1, bias=use_bias)),
-                   norm_layer(dim_out)
-                   ]
-
-    return nn.Sequential(*conv_block)
-
-
 class ResnetBlock(nn.Module):
+    """Construct a resnet block.
 
-    """Define a Resnet block"""
+        Parameters:
+            dim_in (int)        -- the number of channels_in in the conv layer.
+            dim_out (int)       -- the number of channels_out in the conv layer.
+            norm_layer          -- normalization layer
+            use_bias (bool)     -- if the conv layer uses bias or not
 
-    def __init__(self, dim_in, dim_out, norm_layer, use_bias=False):
-        """Initialize the Resnet block
-
-        A resnet block is a conv block with skip connections.
-
-        We construct a conv block with build_conv_block function,
-        and implement skip connections in <forward> function.
+        Returns a resnet block (with a conv layer, a normalization layer, and a non-linearity layer (ReLU))
         """
 
-        super(ResnetBlock, self).__init__()
+    def __init__(self, dim_in, dim_out, norm_layer=nn.BatchNorm3d, use_bias=False):
+        super().__init__()
 
-        self.conv_block = build_conv_block(dim_in, dim_out, norm_layer, use_bias=False)
-        self.conv_identity = spectral_norm(nn.Conv3d(dim_in, dim_out, kernel_size=1, padding=0, bias=use_bias))
+        self.block = nn.Sequential(*[norm_layer(dim_in),
+                      nn.ReLU(True),
+                      spectral_norm(nn.Conv3d(dim_in, dim_out, kernel_size=3, stride=1, padding=1, bias=use_bias)),
+                      norm_layer(dim_out),
+                      nn.ReLU(True),
+                      spectral_norm(nn.Conv3d(dim_out, dim_out, kernel_size=3, stride=1, padding=1, bias=use_bias))
+                      ])
+
+        self.identity = spectral_norm(nn.Conv3d(dim_in, dim_out, kernel_size=1, padding=0,
+                                                bias=use_bias)) if dim_in != dim_out else nn.Identity()
 
     def forward(self, x):
         """Forward function (with skip connections)"""
-        out = self.conv_identity(x) + self.conv_block(x)  # add skip connections
-        return out
+        h = self.block(x)
+        x = self.identity(x)
+        return h + x
 
 
 class SelfAttention(nn.Module):
@@ -138,72 +119,49 @@ class SelfAttention(nn.Module):
         return out
 
 
+
 class ResnetGenerator(nn.Module):
+    def __init__(self, input_nc=3, output_nc=3, ngf=64, norm_layer=nn.BatchNorm3d, use_bias=True):
+        super().__init__()
 
-    def __init__(self, input_nc=3, output_nc=3, ngf=64, norm_layer=nn.BatchNorm3d, use_bias=False):
-        """Construct a Resnet-based generator
+        self.model = nn.Sequential(
+            ResnetBlock(input_nc, ngf, norm_layer=norm_layer),
+            ResnetBlock(ngf, ngf * 16, norm_layer=norm_layer),
+            ResnetBlock(ngf * 16, ngf * 8, norm_layer=norm_layer),
+            ResnetBlock(ngf * 8, ngf * 4, norm_layer=norm_layer),
+            ResnetBlock(ngf * 4, ngf * 2, norm_layer=norm_layer),
+            SelfAttention(ngf * 2),
+            ResnetBlock(ngf * 2, ngf, norm_layer=norm_layer),
+            norm_layer(ngf),
+            nn.ReLU(),
+            spectral_norm(nn.Conv3d(ngf, output_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)),
+            nn.Tanh(),
+        )
 
-        Parameters:
-            input_nc (int)      -- the number of channels_in in input images
-            output_nc (int)     -- the number of channels_out in output images
-            ngf (int)           -- the number of filters in the last conv layer
-            norm_layer          -- normalization layer
-            use_bias (bool)     -- if the conv layer uses bias or not
-        """
-
-        super(ResnetGenerator, self).__init__()
-
-        model = []
-
-        # Encoder :
-        model += [ResnetBlock(input_nc, ngf, norm_layer=norm_layer, use_bias=use_bias)]
-        model += [ResnetBlock(ngf, ngf * 16, norm_layer=norm_layer, use_bias=use_bias)]
-        model += [ResnetBlock(ngf * 16, ngf * 16, norm_layer=norm_layer, use_bias=use_bias)]
-
-        # Decoder :
-        model += [ResnetBlock(ngf * 16, 8 * ngf, norm_layer=norm_layer, use_bias=use_bias)]
-        model += [ResnetBlock(8 * ngf, 4 * ngf, norm_layer=norm_layer, use_bias=use_bias)]
-        model += [ResnetBlock(4 * ngf, 2 * ngf, norm_layer=norm_layer, use_bias=use_bias)]
-
-        # Spatial Self attention
-        model += [SelfAttention(2 * ngf)]
-
-        model += [ResnetBlock(2 * ngf, ngf, norm_layer=norm_layer, use_bias=use_bias)]
-        model += [nn.BatchNorm3d(ngf),
-                  nn.ReLU(True)
-                  ]
-
-        model += [spectral_norm(nn.Conv3d(ngf, output_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)),
-                  nn.Tanh()
-                  ]
-
-        self.model = nn.Sequential(*model)
-
-    def forward(self, input):
-        """<forward>"""
-        return self.model(input)
+    def forward(self, x):
+        return self.model(x)
 
 
 if __name__ == '__main__':
-    ## test Generator :
+    # test Generator :
 
-    # Define input for generator :
-    input_g = torch.rand((1, 3, 15, 64, 64)).to(device)  # input =[Batch_size , channels, frames width , height]
+    input_g = torch.rand((1, 3, 7, 64, 64)).to(device)  # input =[Batch_size , channels, frames width , height]
     print(' The input shape is : {}'.format(input_g.shape))
 
-    # create instance of generator with define_G , ndf = 32 :
+    # create instance of generator with define_G , ngf = 64 :
     netG = define_G(3, 3, 64)
+
     # check whether the model is on GPU , this function returns a boolean :
     print(' The model is on GPU : {}'.format(next(netG.parameters()).is_cuda))
 
-    # Compute the output :
+    # compute the output :
     output_g = netG(input_g)
 
     # check the output of netG : output = [Batch_size , channels, frames width , height]
     print(' The output shape is : {}'.format(output_g.shape))
 
     # calculate number of parameters for generator :
-
     print('Number of Parameters is : {}'.format(sum(p.numel() for p in netG.parameters())))
+
 
 
