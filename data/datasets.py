@@ -44,7 +44,7 @@ class MotherDataset(Dataset):
 
         Y = self.occlusions[occlusion_idx]( X )
 
-        return X , Y , occlusion_idx
+        return X.transpose_(0, 1) , Y.transpose_(0, 1), occlusion_idx
 
     def __len__(self):
         """

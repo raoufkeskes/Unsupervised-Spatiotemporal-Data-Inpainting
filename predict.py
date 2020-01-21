@@ -1,8 +1,10 @@
 import argparse
 import numpy as np
-from qdataset import *
-from qmodels import Qopius
+from models import ResnetGenerator
 from torchvision import transforms
+import os
+import torch
+from utils import read_video, save_video
 
 if __name__ == '__main__':
 
@@ -12,30 +14,21 @@ if __name__ == '__main__':
     args = parser.parse_args()
     file_names = sorted(os.listdir(args.path))
 
-    mymodel = Qopius()
+    mymodel = ResnetGenerator()
 
     os.makedirs(os.path.join("result"), exist_ok=True)
-    mymodel.load_state_dict(torch.load(os.path.join("model_weight", 'best_weight.pt'), map_location = device)['model_state_dict'])
+    mymodel.load_state_dict(torch.load(os.path.join("model_weight", 'best_weight.pt'),
+                                       map_location=device)['G_state_dict'])
 
     mymodel.eval()
     imgs_transforms = transforms.Compose([
         transforms.Resize((64, 64)),
-        transforms.ToTensor(),
-        transforms.Normalize((0., 0., 0.), (255., 255., 255.)),
+        transforms.ToTensor()
     ])
-    path = os.path.join(args.path, file_names[0])
-    imgs = imgs_transforms(Image.open(path))[None]
-    for i in range(1, len(file_names)):
-        path = os.path.join(args.path, file_names[i])
-        imgs = torch.cat((imgs, imgs_transforms(Image.open(path))[None]), dim=0)
-    print(imgs.shape)
-    with torch.no_grad():
-        labels = mymodel(imgs)
-        _, labels = torch.max(labels, -1)
 
-    file1 = open("result/predictions.txt", "a")
-    for i in range(0, len(file_names)):
-        s = "({})    img_name:{}     Label:{}   ".format(i, file_names[i], labels[i].item())
-        print(s)
-        file1.write(s+"\n")
-    file1.close()
+    for i in range(len(file_names)):
+        video = read_video(file_names[i])
+        with torch.no_grad():
+            flow = mymodel(video)
+
+        save_video(video.cpu().numpy(), os.path.join("result", file_names[i], '_filled.mp4'))

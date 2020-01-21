@@ -75,7 +75,6 @@ def write_video(video_tensor, out_dir, filename, fps = 30.0 ,occlusion_color=255
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     movie  = cv2.VideoWriter(out_dir+"/"+filename , fourcc, fps , out_size )
 
-
     for frame in video_tensor:
 
         # numpy => RGB to BGR ==>  W x H x C to C x W x H
