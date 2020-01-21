@@ -85,7 +85,7 @@ if __name__ == '__main__':
     print(' The input shape for df is : {}'.format(input_df.shape))
 
     # Define input for ds :
-    input_ds = torch.rand((4, 3, 35, 64, 64)).to(device)     # input = Batch_size , channels, frames, width , height
+    input_ds = torch.rand((2, 3, 35, 64, 64)).to(device)     # input = Batch_size , channels, frames, width , height
     print(' The input shape for ds is : {}'.format(input_ds.shape))
 
     # create instance of Discriminator(ds,df) with define_D, set the mode to '2','3', ndf = 32 :

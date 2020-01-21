@@ -1,7 +1,6 @@
 # Created by raouf at 19/01/2020
 
 
-import torch
 from torchvision import transforms
 from data.utils import getDataloaders , write_video
 from data.occlusions import RainDrops,RemovePixels,MovingBar
