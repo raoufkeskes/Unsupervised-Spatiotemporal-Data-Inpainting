@@ -1,16 +1,21 @@
-# import argparse
-# import time
-# from qdataset import *
-# from qmodels import Qopius
-# from torch.utils.tensorboard import SummaryWriter
-# import torchvision.transforms as transforms
-# import numpy as np
+import argparse
+import time
+import torch
+import torch.nn as nn
+from data.utils import getDataloaders
+from models import ResnetGenerator, Discriminator
+from torch.utils.tensorboard import SummaryWriter
+import torchvision.transforms as transforms
+import numpy as np
+from data.occlusions import RainDrops, RemovePixels, MovingBar
+import os
 
 np.random.seed(seed=1)
 
 PRINT_INTERVAL = 20
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+occ_list = [RainDrops(), RemovePixels(), MovingBar()]
 
 
 class AverageMeter(object):
@@ -28,93 +33,99 @@ class AverageMeter(object):
         self.count = 0
 
     def update(self, value, n=1):
-
         self.val = value
         self.sum += value * n
         self.count += n
         self.avg = self.sum / self.count
 
 
-def epoch(model, data, criterion, optimizer=None):
-    model.eval() if optimizer is None else model.train()
-    avg_loss = AverageMeter()
+def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimizer=None):
+    if optimizer is None:
+        generator.eval()
+        discriminator_s.eval()
+        discriminator_f.eval()
+    else:
+        generator.eval()
+        discriminator_s.eval()
+        discriminator_f.eval()
+
+    avg_loss_g = AverageMeter()
+    avg_loss_d = AverageMeter()
+    avg_loss = [avg_loss_d, avg_loss_g]
     avg_batch_time = AverageMeter()
-    avg_acc1 = AverageMeter()
-    avg_acc2 = AverageMeter()
 
     tic = time.time()
-    for i, (imgs, labels) in enumerate(data):
-        imgs = imgs.to(device)
-        labels = labels.to(device)
+    d_labels = 0
+    for i, (y, _, idx) in enumerate(data):
+        y = y.to(device)
         with torch.set_grad_enabled(optimizer is not None):
-            pred = model(imgs)
-            loss = criterion(labels, pred)
+            x_hat = generator(y)
+            y_hat = occ_list[idx](x_hat)
+            label_real = torch.full((y.size(0),), 1 - d_labels, device=device)
+            label_fake = torch.full((y.size(0),), d_labels, device=device)
+            loss = criterion(discriminator_s(y), label_real) + criterion(discriminator_s(y_hat), label_fake)
+            for i in range(y.size(2)):
+                loss += criterion(discriminator_f(y[:, :, i]), label_real) + \
+                        criterion(discriminator_f(y_hat[:, :, i]), label_fake)
 
         if optimizer is not None:
-            optimizer.zero_grad()
+            optimizer[d_labels].zero_grad()
             loss.backward()
-            optimizer.step()
+            optimizer[d_labels].step()
 
-        acc1, acc2 =accuracy(pred, labels, (1, 2))
-        avg_acc1.update(acc1.item())
-        avg_acc2.update(acc2.item())
         batch_time = time.time() - tic
         tic = time.time()
 
-        avg_loss.update(loss.item())
+        avg_loss[d_labels].update(loss.item())
         avg_batch_time.update(batch_time)
-
+        d_labels -= 1
         if i % PRINT_INTERVAL == 0:
             print('[{0:s} Batch {1:03d}/{2:03d}]\t'
                   'Time {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'acc1 {acc1.val:5.1f} ({acc1.avg:5.1f})\t'
-                  'acc2 {acc2.val:5.1f} ({acc2.avg:5.1f})'.format(
-                "EVAL" if optimizer is None else "TRAIN", i, len(data), batch_time=avg_batch_time, loss=avg_loss,
-                acc1=avg_acc1, acc2=avg_acc2))
+                  'D Loss {loss_d.val:.4f} ({loss_d.avg:.4f})\t'
+                  'G Loss {loss_g.val:.4f} ({loss_g.avg:.4f})'.format(
+                "EVAL" if optimizer is None else "TRAIN", i, len(data), batch_time=avg_batch_time, loss_d=avg_loss[0],
+                loss_g=avg_loss[1]))
 
     print('\n===============> Total time {batch_time:d}s\t'
-          'Avg loss {loss.avg:.4f}\t'
-          'Avg_acc1 {acc1.avg:5.2f} \t'
-          'Avg_acc2 {acc2.avg:5.2f} \n'.format(
-        batch_time=int(avg_batch_time.sum), loss=avg_loss,
-        acc1=avg_acc1, acc2=avg_acc2))
+          'Avg D loss {loss_d.avg:.4f}\t'
+          'Avg G loss {loss_g.avg:.4f}\n'.format(
+        batch_time=int(avg_batch_time.sum), loss_d=avg_loss[0], loss_g=avg_loss[1]))
 
-    return avg_acc1.avg, avg_acc2.avg, avg_loss.avg
+    return avg_loss_g.avg, avg_loss_d.avg
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root', default='data', type=str, metavar='DIR', help='path to dataset')
-    parser.add_argument('--epochs', default=30, type=int, metavar='N', help='number of total epochs to run')
-    parser.add_argument('--batch-size', default=32, type=int, metavar='N', help='mini-batch size (default: 32)')
-    parser.add_argument('--lr', default=1e-6, type=float, metavar='LR', help='learning rate')
-    parser.add_argument("--augment", help="perform data augmentation", action="store_true")
+    parser.add_argument('--root', default="../../datasets/KTH/", type=str, metavar='DIR', help='path to dataset')
+    parser.add_argument('--epochs', default=200, type=int, metavar='N', help='number of total epochs to run')
+    parser.add_argument('--batch_size', default=2, type=int, metavar='N', help='mini-batch size (default: 2)')
+    parser.add_argument('--num_frames', default=35, type=int, metavar='N', help='number of frames (default: 35)')
+    parser.add_argument('--lr', default=1e-4, type=float, metavar='LR', help='learning rate')
+    # parser.add_argument("--augment", help="perform data augmentation", action="store_true")
 
     args = parser.parse_args()
-    mymodel = Qopius()
-    mymodel.to(device)
-    loss_fnc = myloss
-
-    optim = torch.optim.Adam(mymodel.parameters(), args.lr)
-
+    G = ResnetGenerator.define_G(3, 3, 64)
+    Ds = Discriminator.define_D('3', 3, 64)
+    Df = Discriminator.define_D('2', 3, 64)
+    optimG = torch.optim.Adam(G.parameters(), args.lr, betas=(0.99, 0.99))
+    optimD = torch.optim.Adam(list(Ds.parameters()) + list(Df.parameters()), args.lr, betas=(0.99, 0.99))
+    loss_func = nn.BCELoss()
     img_transforms = transforms.Compose([
         transforms.Resize((64, 64)),
-        transforms.ToTensor(),
-        transforms.Normalize((0., 0., 0.), (255., 255., 255.))
+        transforms.ToTensor()
     ])
 
-    aug_transforms = None
-    if args.augment:
-        aug_transforms = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(17),
-            transforms.RandomVerticalFlip()
-        ])
+    train, val, test = getDataloaders(args.root, img_transforms, occlusions=[RainDrops()], nb_frames=args.num_frames,
+                                      batch_size=args.batch_size, val_size=0.05, test_size=0.05)
 
-    train, val, test = getDataloaders(args.batch_size, args.root, aug_transforms=aug_transforms,
-                                      img_transforms=img_transforms)
+    tb_occ_video_train = next(iter(train))[0]
+    tb_occ_video_val = next(iter(val))[0]
+    tb_occ_video_test = next(iter(test))[0]
+    tb_occ_video_train = tb_occ_video_train[0:1].to(device)
+    tb_occ_video_val = tb_occ_video_val[0:1].to(device)
+    tb_occ_video_test = tb_occ_video_test[0:1].to(device)
 
     os.makedirs(os.path.join("Checkpoints"), exist_ok=True)
     os.makedirs(os.path.join("model_weight"), exist_ok=True)
@@ -123,56 +134,62 @@ if __name__ == '__main__':
     starting_epoch = 0
     best_loss = 100000
     if os.path.exists(os.path.join("Checkpoints", 'training_state.pt')):
-        checkpoint = torch.load(os.path.join("Checkpoints", 'training_state.pt'),  map_location = device)
-        mymodel.load_state_dict(checkpoint['model_state_dict'])
-        optim.load_state_dict(checkpoint['optimizer_state_dict'])
+        checkpoint = torch.load(os.path.join("Checkpoints", 'training_state.pt'), map_location=device)
+        G.load_state_dict(checkpoint['G_state_dict'])
+        Ds.load_state_dict(checkpoint['Ds_state_dict'])
+        Df.load_state_dict(checkpoint['Df_state_dict'])
+        optimG.load_state_dict(checkpoint['optimizerG_state_dict'])
+        optimD.load_state_dict(checkpoint['optimizerD_state_dict'])
         starting_epoch = checkpoint['epoch']
         best_loss = checkpoint['best_loss']
 
-    count_early_stopping = 0
     for e in range(starting_epoch, args.epochs):
 
         print("=================\n=== EPOCH " + str(e + 1) + " =====\n=================\n")
 
-        avg_acc1, avg_acc2, loss = epoch(mymodel, train, loss_fnc, optim)
+        loss_generator, loss_discriminator = epoch(G, Ds, Df, train, loss_func, (optimD, optimG))
 
         torch.save({
             'epoch': e,
-            'model_state_dict': mymodel.state_dict(),
+            'G_state_dict': G.state_dict(),
+            'Ds_state_dict': Ds.state_dict(),
+            'Df_state_dict': Df.state_dict(),
             'best_loss': best_loss,
-            'optimizer_state_dict': optim.state_dict(),
+            'optimizerG_state_dict': optimG.state_dict(),
+            'optimizerD_state_dict': optimD.state_dict()
         }, os.path.join("Checkpoints", 'training_state.pt'))
 
-        avg_acc1_val, avg_acc2_val, loss_val = epoch(mymodel, val, loss_fnc)
-        count_early_stopping += 1
-        if loss_val < best_loss:
-            count_early_stopping = 0
-            best_loss = loss_val
+        loss_generator_val, loss_discriminator_val = epoch(G, Ds, Df, val, loss_func)
+
+        if loss_generator_val < best_loss:
+            best_loss = loss_generator_val
             torch.save({
-                'model_state_dict': mymodel.state_dict(),
-                'loss_val': loss_val, 'acc1_val': avg_acc1_val,
-                'acc2_val': avg_acc2_val,
-                'loss': loss, 'acc1': avg_acc1, 'acc2': avg_acc2
+                'G_state_dict': G.state_dict(),
+                'Ds_state_dict': Ds.state_dict(),
+                'Df_state_dict': Df.state_dict(),
+                'loss_generator_val': loss_generator_val, 'loss_discriminator_val': loss_discriminator_val,
+                'loss_generator': loss_generator, 'loss_discriminator': loss_discriminator
             }, os.path.join("model_weight", 'best_weight.pt'))
 
-        avg_acc1_test, avg_acc2_test, loss_test = epoch(mymodel, test, loss_fnc)
-        tb.add_scalar('train/total_Loss', loss, e)
-        tb.add_scalar('train/acc1', avg_acc1, e)
-        tb.add_scalar('train/acc2', avg_acc2, e)
+        loss_generator_test, loss_discriminator_test = epoch(G, Ds, Df, test, loss_func)
+        with torch.no_grad():
+            G.eval()
 
-        tb.add_scalar('val/total_Loss', loss_val, e)
-        tb.add_scalar('val/acc1', avg_acc1_val, e)
-        tb.add_scalar('val/acc2', avg_acc2_val, e)
+            filled_video = G(tb_occ_video_train)
+            filled_video.tranpose_(1, 2)
+            tb.add_video('train', filled_video, e)
 
-        tb.add_scalar('test/total_Loss', loss_test, e)
-        tb.add_scalar('test/acc1', avg_acc1_test, e)
-        tb.add_scalar('test/acc2', avg_acc2_test, e)
-        if count_early_stopping >= 20:
-            print("===========Early stopping==========\n No improvement in validation "
-                  "loss after {} epochs".format(count_early_stopping))
+            filled_video = G(tb_occ_video_val)
+            filled_video.tranpose_(1, 2)
+            tb.add_video('val', filled_video, e)
 
-        if e < 100:
-            optim.param_groups[0]['lr'] += (1e-4 - args.lr) / 100
-        elif e % 50 == 0:
-            optim.param_groups[0]['lr'] *= 0.5
+            filled_video = G(tb_occ_video_test)
+            filled_video.tranpose_(1, 2)
+            tb.add_video('test', filled_video, e)
+
+        tb.add_scalars('Generator', {"train": loss_generator, "val": loss_generator_val, "test": loss_generator_test},
+                       e)
+        tb.add_scalars('Discriminator', {"train": loss_discriminator, "val": loss_discriminator_val,
+                                         "test": loss_discriminator_test}, e)
+
     tb.close()

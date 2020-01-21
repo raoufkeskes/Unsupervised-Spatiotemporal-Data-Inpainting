@@ -2,10 +2,10 @@
 
 
 from torchvision import transforms
-from data.utils import getDataloaders , write_video
-from data.occlusions import RainDrops,RemovePixels,MovingBar
+from data.utils import getDataloaders, write_video
+from data.occlusions import RainDrops, RemovePixels, MovingBar
 from data.datasets import KTH_Dataset
-from models.genarator_1 import *
+from models.ResnetGenerator import *
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -29,7 +29,7 @@ batch_size = 1
 train_loader, val_loader, test_loader = getDataloaders ("../../datasets/KTH/", nb_frames=25,transform=transform,occlusions=[moving_bar],batch_size=batch_size )
 
 
-for x_train_batch, y_train_batch, occ_ix in  train_loader :
+for x_train_batch, y_train_batch, occ_ix in train_loader :
 
     # to device
     x_train_batch, y_train_batch = x_train_batch.to(device), y_train_batch.to(device)

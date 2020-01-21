@@ -2,21 +2,22 @@ import torch.nn.functional as F
 import torch
 
 
-def accuracy(output, target, topk=(1,)):
-    maxk = max(topk)
-    batch_size = target.size(0)
-
-    _, pred = output.topk(maxk, 1, True, True)
-    pred = pred.t()
-    correct = pred.eq(target.view(1, -1).expand_as(pred))
-
-    res = []
-    for k in topk:
-        correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
-        res.append(correct_k.mul_(100.0 / batch_size))
-    return res
+def read_video(path):
+    """
+    a Helper to read the full video from the path in batches of 35 or less(choose a number that divides the total
+    number of frames). Means if the video contains 300 frames then this function returns a tensor of size
+    (10, 3, 30, 64, 64)
+    :param path:
+    :return:
+    """
+    pass
 
 
-def myloss(true_label, pred_label):
-    loss_label = F.cross_entropy(pred_label, true_label)
-    return loss_label
+def save_video(video, path):
+    """
+    Given a tensor of shape (N, C, T, H, W) represting a video and a path, save this video to this path.
+    :param video:
+    :param path:
+    :return:
+    """
+    pass

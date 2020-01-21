@@ -29,7 +29,6 @@ def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_
 
     Returns a generator
     """
-
     norm_layer = norm
     net = ResnetGenerator(input_nc, output_nc, ngf,norm_layer)
 
@@ -139,7 +138,9 @@ class ResnetGenerator(nn.Module):
         )
 
     def forward(self, x):
-        return self.model(x)
+        y = self.model(x)
+        y = torch.where(x < 0, y, x)
+        return y
 
 
 if __name__ == '__main__':
