@@ -45,9 +45,9 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
         discriminator_s.eval()
         discriminator_f.eval()
     else:
-        generator.eval()
-        discriminator_s.eval()
-        discriminator_f.eval()
+        generator.train()
+        discriminator_s.train()
+        discriminator_f.train()
 
     avg_loss_g = AverageMeter()
     avg_loss_d = AverageMeter()
