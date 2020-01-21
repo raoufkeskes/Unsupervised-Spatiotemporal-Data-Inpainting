@@ -67,7 +67,7 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
             for i in range(y.size(2)):
                 loss += criterion(discriminator_f(y[:, :, i]), label_real) + \
                         criterion(discriminator_f(y_hat[:, :, i]), label_fake)
-
+            loss *= 1/y.size(2)
         if optimizer is not None:
             optimizer[d_labels].zero_grad()
             loss.backward()
