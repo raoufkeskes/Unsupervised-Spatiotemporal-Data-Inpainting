@@ -12,6 +12,7 @@ from PIL import Image
 # utils
 import os
 
+
 class MotherDataset(Dataset):
     """
     class regrouping common attributes and operations between different datasets
@@ -36,14 +37,12 @@ class MotherDataset(Dataset):
 
         # complete video Tensor
 
-
         X = self.read_video(self.filenames[idx])
         # select one occlusion type
         occlusion_idx = np.random.randint(low=0, high=len(self.occlusions))
         # occluded video Tensor
 
         Y = self.occlusions[occlusion_idx]( X )
-
 
         return X , Y , occlusion_idx
 
@@ -100,7 +99,6 @@ class MotherDataset(Dataset):
         return raw_video
 
 
-
 class FaceForensics_Dataset(MotherDataset):
     """
     FaceForensics Dataset class
@@ -108,6 +106,7 @@ class FaceForensics_Dataset(MotherDataset):
     def __init__(self, root_dir, transform , occlusions=None , nb_frames=35  ):
         super().__init__( root_dir, transform , occlusions=occlusions , nb_frames=nb_frames )
         self.filenames = os.listdir(root_dir)
+
 
 class KTH_Dataset(MotherDataset):
     """

@@ -8,7 +8,7 @@ import os
 import numpy as np
 
 
-def getDataloaders( root , transform  , occlusions=None , nb_frames=35 , batch_size = 4 , val_size=0.05 , test_size=0.05 ):
+def getDataloaders(root, transform, occlusions=None, nb_frames=35, batch_size=4, val_size=0.05, test_size=0.05):
     """
     :param root        : String => root directory of the dataset
     :param transform   : torchvision.transforms.Compose(transforms) ==> https://pytorch.org/docs/stable/torchvision/transforms.html

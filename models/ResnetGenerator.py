@@ -29,7 +29,6 @@ def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_
 
     Returns a generator
     """
-
     norm_layer = norm
     net = ResnetGenerator(input_nc, output_nc, ngf,norm_layer)
 

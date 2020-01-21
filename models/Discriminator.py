@@ -11,6 +11,7 @@ Inspired by CycleGan,Pix2Pix paper : https://github.com/junyanz/pytorch-CycleGAN
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
+
 def define_D(mode, input_nc, ndf, init_gain=0.02, gpu_ids=[device]):
     """Create a 'PatchGAN' discriminator
 

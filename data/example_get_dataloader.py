@@ -30,7 +30,7 @@ batch_size = 1
 train_loader, val_loader, test_loader = getDataloaders ("../../datasets/KTH/", nb_frames=25,transform=transform,occlusions=[moving_bar],batch_size=batch_size )
 
 
-for x_train_batch, y_train_batch, occ_ix in  train_loader :
+for x_train_batch, y_train_batch, occ_ix in train_loader :
 
     # to device
     x_train_batch, y_train_batch = x_train_batch.to(device), y_train_batch.to(device)
