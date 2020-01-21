@@ -1,3 +1,4 @@
+torch
 six
 tensorflow
 tqdm

@@ -3,10 +3,10 @@
 
 import torch
 from torchvision import transforms
-from data.utils import getDataloaders , write_video
-from data.occlusions import RainDrops,RemovePixels,MovingBar
+from data.utils import getDataloaders, write_video
+from data.occlusions import RainDrops, RemovePixels, MovingBar
 from data.datasets import KTH_Dataset
-from models.genarator_1 import *
+from models.ResnetGenerator import *
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
