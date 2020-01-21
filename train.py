@@ -61,9 +61,12 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
         with torch.set_grad_enabled(optimizer is not None):
             x_hat = generator(y)
             y_hat = occ_list[idx](x_hat)
-            y_label_real = torch.full((y.size(0),), 1 - d_labels, device=device)
-            y_label_fake = torch.full((y.size(0),), d_labels, device=device)
-            loss = criterion(y, y_label_real) + criterion(y_hat, y_label_fake)
+            label_real = torch.full((y.size(0),), 1 - d_labels, device=device)
+            label_fake = torch.full((y.size(0),), d_labels, device=device)
+            loss = criterion(discriminator_s(y), label_real) + criterion(discriminator_s(y_hat), label_fake)
+            for i in range(y.size(2)):
+                loss += criterion(discriminator_f(y[:, :, i]), label_real) + \
+                        criterion(discriminator_f(y_hat[:, :, i]), label_fake)
 
         if optimizer is not None:
             optimizer[d_labels].zero_grad()
