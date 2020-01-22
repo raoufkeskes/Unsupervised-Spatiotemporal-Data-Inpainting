@@ -55,14 +55,14 @@ class RainDrops(Occlusion):
         self.mask_code = mask_code
         self.output_size=output_size
 
-    def __call__(self, video ):
-        frame_height,frame_width = video.shape[2] , video.shape[3]
+    def __call__(self, video):
+        frame_height, frame_width = video.shape[2], video.shape[3]
         video_tensor = []
 
         nbr_frames = 0
         for frame in video :
 
-            frame_copy = frame.clone()
+            #frame_copy = frame.clone()
 
             for i in range((self.positions).shape[0]) :
 
@@ -71,13 +71,13 @@ class RainDrops(Occlusion):
                 mask_x = torch.arange(start=int(pos[0]), end=int(pos[0] + self.height[i])).cpu()
                 #mask y
                 mask_y = torch.arange(start=int(pos[1]), end=int(pos[1] + self.width)).cpu()
-                grid_x, grid_y = torch.meshgrid(mask_x,mask_y)
-                frame_copy = frame_copy.cpu()
-                frame_copy[:, grid_x%self.output_size[0] , grid_y%self.output_size[1]  ] = self.mask_code
-                frame_copy.to(device)
+                grid_x, grid_y = torch.meshgrid(mask_x, mask_y)
+                frame = frame.cpu()
+                frame[:, grid_x%self.output_size[0] , grid_y%self.output_size[1]  ] = self.mask_code
+                frame.to(device)
 
             # append the frame
-            video_tensor.append(frame_copy.unsqueeze(0))
+            video_tensor.append(frame.unsqueeze(0))
 
             # next starting X position = current X position + speed
             self.positions[:, 0] += self.speed

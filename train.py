@@ -63,21 +63,20 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
             x_hat = generator(y)
             occ = occ_list[idx[0].item()]
             y_hat = []
-            print(torch.cuda.memory_allocated() )
+            print(torch.cuda.memory_allocated())
             for b in range(y.size(0)):
-                y_hat.append(occ(x_hat[b].detach()).transpose(0,1)[None])
+                y_hat.append(occ(x_hat[b].transpose(0, 1))[None])
             print(torch.cuda.memory_allocated())
             y_hat = torch.cat(y_hat).to(device)
             y_hat.transpose_(1, 2)
             label_real = torch.full((y.size(0),), 1 - d_labels, device=device)
             label_fake = torch.full((y.size(0),), d_labels, device=device)
-            a = discriminator_s(y).view(-1)
-            b = discriminator_s(y).view(-1)
-            loss = criterion(a, label_real) + criterion(b, label_fake)
-            # for i in range(y.size(2)):
-            #     loss += criterion(discriminator_f(y[:, :, i]).view(-1), label_real) + \
-            #             criterion(discriminator_f(y_hat[:, :, i]).view(-1), label_fake)
-            # loss *= 1/y.size(2)
+            loss = criterion(discriminator_s(y).view(-1), label_real) + criterion(discriminator_s(y_hat).view(-1),
+                                                                                  label_fake)
+            for j in range(y.size(2)):
+                loss += criterion(discriminator_f(y[:, :, j]).view(-1), label_real) + \
+                        criterion(discriminator_f(y_hat[:, :, j]).view(-1), label_fake)
+            loss *= 1/y.size(2)
         if optimizer is not None:
             optimizer[d_labels].zero_grad()
             loss.backward()
@@ -96,7 +95,6 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
                   'G Loss {loss_g.val:.4f} ({loss_g.avg:.4f})'.format(
                 "EVAL" if optimizer is None else "TRAIN", i, len(data), batch_time=avg_batch_time, loss_d=avg_loss[0],
                 loss_g=avg_loss[1]))
-    del x_hat, loss, a, b
     print('\n===============> Total time {batch_time:d}s\t'
           'Avg D loss {loss_d.avg:.4f}\t'
           'Avg G loss {loss_g.avg:.4f}\n'.format(
