@@ -2,9 +2,12 @@
 
 # Created by raouf at 19/01/2020
 
-# KTH : Human Actions Dataset
+# get the absolute path of the curreent script
+# to make it always work
+SCRIPTPATH="$( cd "$(dirname "$0")" || exit ; pwd -P )"
 
-TARGET_DIR=../datasets/KTH
+# KTH : Human Actions Dataset
+TARGET_DIR=$SCRIPTPATH/../../../datasets/KTH
 
 DOMAIN='http://www.nada.kth.se'
 path='/cvap/actions'

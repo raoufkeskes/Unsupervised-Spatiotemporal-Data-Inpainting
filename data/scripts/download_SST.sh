@@ -8,8 +8,11 @@
 USERNAME="akeskes"
 PASSWORD="Amal_Project2020"
 
+# get the absolute path of the curreent script
+# to make it always work
+SCRIPTPATH="$( cd "$(dirname "$0")" || exit ; pwd -P )"
 
-TARGET_DIR=../datasets/SST
+TARGET_DIR=$SCRIPTPATH/../../../datasets/SST
 mkdir -p ${TARGET_DIR}
 
 DOMAIN='http://nrt.cmems-du.eu'
