@@ -16,8 +16,8 @@ wget-log*
 .idea
 
 # large data
-
 runs
 result
 model_weight
 Checkpoints
+*.tar

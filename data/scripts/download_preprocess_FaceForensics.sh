@@ -8,11 +8,16 @@ echo 'getting FaceForensics++ dataset'
 echo '-------------------------------'
 echo ''
 
-TARGET_DIR=../datasets/FaceForensics
+
+# get the absolute path of the curreent script
+# to make it always work
+SCRIPTPATH="$( cd "$(dirname "$0")" || exit ; pwd -P )"
+
+TARGET_DIR=$SCRIPTPATH/../../../datasets/FaceForensics
 mkdir -p ${TARGET_DIR}/original-data
 
 SCRIPT_NAME="FaceForensics_download.py"
-python  data/scripts/$SCRIPT_NAME $TARGET_DIR/original-data -d original -c c23 -t videos  --num_videos 10
+python  $SCRIPTPATH/$SCRIPT_NAME $TARGET_DIR/original-data -d original -c c23 -t videos  --num_videos 10
 mv  -f ${TARGET_DIR}/original-data/original_sequences/youtube/c23/videos/* ${TARGET_DIR}
 rm -rf ${TARGET_DIR}/original-data
 

@@ -2,6 +2,8 @@
 
 from data.utils import *
 
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
 class  Occlusion(object):
 
     def __init__(self):
@@ -66,12 +68,13 @@ class RainDrops(Occlusion):
 
                 pos = self.positions[i]
                 #mask x
-                mask_x = torch.arange(start=int(pos[0]), end=int(pos[0] + self.height[i]))
+                mask_x = torch.arange(start=int(pos[0]), end=int(pos[0] + self.height[i])).cpu()
                 #mask y
-                mask_y = torch.arange(start=int(pos[1]), end=int(pos[1] + self.width))
-
+                mask_y = torch.arange(start=int(pos[1]), end=int(pos[1] + self.width)).cpu()
                 grid_x, grid_y = torch.meshgrid(mask_x,mask_y)
+                frame_copy = frame_copy.cpu()
                 frame_copy[:, grid_x%self.output_size[0] , grid_y%self.output_size[1]  ] = self.mask_code
+                frame_copy.to(device)
 
             # append the frame
             video_tensor.append(frame_copy.unsqueeze(0))

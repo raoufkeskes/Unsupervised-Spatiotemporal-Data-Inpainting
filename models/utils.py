@@ -1,7 +1,6 @@
 import torch
 from torch.nn import init
 
-
 """
 @author : Aissam Djahnine
 @date : 17/01/2020 02:39
@@ -51,10 +50,11 @@ def init_net(net, mode, init_gain=0.02, gpu_ids=[0]):
     if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())
         net.to(gpu_ids[0])
-        net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
+        #net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
 
     init_weights(net, mode, init_gain=init_gain)
 
     return net
+
 
 

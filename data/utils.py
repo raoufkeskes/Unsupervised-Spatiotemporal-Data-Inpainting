@@ -43,11 +43,11 @@ def getDataloaders(root, transform, occlusions=None, nb_frames=35, batch_size=4,
     test_sampler  = SubsetRandomSampler(test_idx)
 
     train_loader = DataLoader(dataset, batch_size=batch_size, sampler=train_sampler,
-                              pin_memory=torch.cuda.is_available(), num_workers=4)
+                              pin_memory=torch.cuda.is_available(), num_workers=0)
     val_loader = DataLoader(dataset, batch_size=batch_size, sampler=val_sampler,
-                            pin_memory=torch.cuda.is_available(), num_workers=4)
+                            pin_memory=torch.cuda.is_available(), num_workers=0)
     test_loader = DataLoader(dataset, batch_size=batch_size, sampler=test_sampler,
-                             pin_memory=torch.cuda.is_available(), num_workers=4)
+                             pin_memory=torch.cuda.is_available(), num_workers=0)
 
     return train_loader, val_loader, test_loader
 

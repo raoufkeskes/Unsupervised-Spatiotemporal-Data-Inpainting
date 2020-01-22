@@ -1,7 +1,6 @@
 # Created by raouf at 19/01/2020
 
 
-import torch
 from torchvision import transforms
 from data.utils import getDataloaders, write_video
 from data.occlusions import RainDrops, RemovePixels, MovingBar
@@ -32,6 +31,7 @@ train_loader, val_loader, test_loader = getDataloaders ("../../datasets/KTH/", n
 
 for x_train_batch, y_train_batch, occ_ix in train_loader :
 
+    print(occ_ix)
     # to device
     x_train_batch, y_train_batch = x_train_batch.to(device), y_train_batch.to(device)
 
