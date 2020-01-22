@@ -12,7 +12,7 @@ import os
 
 np.random.seed(seed=1)
 
-PRINT_INTERVAL = 20
+PRINT_INTERVAL = 10
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 occ_list = [RainDrops(), RemovePixels(), MovingBar()]
@@ -64,7 +64,7 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
             occ = occ_list[idx[0].item()]
             y_hat = []
             for b in range(y.size(0)):
-                y_hat.append(occ(x_hat[b].detach()).transpose(0,1)[None])
+                y_hat.append(occ(x_hat[b]).transpose(0,1)[None])
             y_hat = torch.cat(y_hat).to(device)
             y_hat.transpose_(1, 2)
             label_real = torch.full((y.size(0),), 1 - d_labels, device=device)
@@ -87,7 +87,8 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
         avg_loss[d_labels].update(loss.item())
         avg_batch_time.update(batch_time)
         d_labels = 1 - d_labels
-        if i % PRINT_INTERVAL == 0:
+
+        if i % PRINT_INTERVAL== 0:
             print('[{0:s} Batch {1:03d}/{2:03d}]\t'
                   'Time {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t'
                   'D Loss {loss_d.val:.4f} ({loss_d.avg:.4f})\t'
