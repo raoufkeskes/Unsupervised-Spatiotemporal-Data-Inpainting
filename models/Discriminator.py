@@ -25,7 +25,6 @@ def define_D(mode, input_nc, ndf, init_gain=0.02, gpu_ids=[device]):
     Returns a discriminator
     """
     net = NLayerDiscriminator(mode, input_nc, ndf)
-
     return init_net(net, mode, init_gain, gpu_ids)
 
 
