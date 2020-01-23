@@ -26,7 +26,7 @@ moving_bar  = MovingBar(position=[0.2,0.2],width=0.2,height=0.4,speed=0.05)
 
 batch_size = 1
 
-train_loader, val_loader, test_loader = getDataloaders ("../../datasets/KTH/", nb_frames=25,transform=transform,occlusions=[moving_bar],batch_size=batch_size )
+train_loader, val_loader, test_loader = getDataloaders ("../../datasets/KTH/", nb_frames=10,transform=transform,occlusions=[moving_bar],batch_size=batch_size )
 
 
 for x_train_batch, y_train_batch, occ_ix in train_loader :
@@ -46,14 +46,14 @@ output = netG(y_train_batch.transpose(1,2))
 print(output.shape)
 # #
 # # # untransform your video before saving it to get
-untransformed_video = output[0].detach().transpose(0,1).cpu() *255
-
-print(untransformed_video.min())
+# untransformed_video = output[0].detach().transpose(0,1).cpu() *255
 #
+# print(untransformed_video.min())
+# #
+# #
+# print(untransformed_video.shape)
 #
-print(untransformed_video.shape)
-
-write_video(  untransformed_video , "../outputs/tmp","temp.mp4" )
+# write_video(  untransformed_video , "../outputs/tmp","temp.mp4" )
 
 
 

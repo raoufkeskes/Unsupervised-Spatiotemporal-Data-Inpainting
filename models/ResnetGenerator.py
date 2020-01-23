@@ -127,7 +127,6 @@ class ResnetGenerator(nn.Module):
             # Encoder
             ResnetBlock(input_nc, ngf, norm_layer=norm_layer),
             ResnetBlock(ngf, ngf * 16, norm_layer=norm_layer),
-            ResnetBlock( ngf * 16 , ngf * 16, norm_layer=norm_layer ),
             # Decoder
             # Resnet Chunk 1
             ResnetBlock(ngf * 16, ngf * 8, norm_layer=norm_layer),
@@ -143,10 +142,14 @@ class ResnetGenerator(nn.Module):
             nn.Tanh(),
         )
 
-    def forward(self, x):
-        y = self.model(x)
-        y = torch.where(x < 0, y, x)
-        return y
+    def forward(self, y):
+        """
+        :param y : Tensor ( Channels x Time x H x W ) corrupted video
+        :return  x_hat : Tensor ( Channels x Time x H x W ) reconstructed video
+        """
+        mask     = y >= 0
+        mask_bar = y < 0
+        return  self.model(y) * mask_bar + y * mask
 
 
 if __name__ == '__main__':

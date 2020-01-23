@@ -108,7 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('--root', default="../datasets/FaceForensics/", type=str, metavar='DIR', help='path to dataset')
     parser.add_argument('--epochs', default=200, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--batch_size', default=2, type=int, metavar='N', help='mini-batch size (default: 2)')
-    parser.add_argument('--num_frames', default=7, type=int, metavar='N', help='number of frames (default: 35)')
+    parser.add_argument('--num_frames', default=5, type=int, metavar='N', help='number of frames (default: 35)')
     parser.add_argument('--lr', default=1e-4, type=float, metavar='LR', help='learning rate')
     # parser.add_argument("--augment", help="perform data augmentation", action="store_true")
 

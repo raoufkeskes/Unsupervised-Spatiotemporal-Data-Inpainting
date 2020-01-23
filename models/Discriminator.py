@@ -42,9 +42,7 @@ class NLayerDiscriminator(nn.Module):
         """
         super(NLayerDiscriminator, self).__init__()
 
-        stride = 2 if mode =='2' else (1,2,2)
-
-        model = [spectral_norm(eval("nn.Conv"+mode+"d")(input_nc, ndf, kernel_size=3, stride=stride, padding=1)),
+        model = [spectral_norm(eval("nn.Conv"+mode+"d")(input_nc, ndf, kernel_size=3, stride=2, padding=1)),
                  eval("nn.BatchNorm"+mode+"d")(ndf),
                  nn.LeakyReLU(0.2, True)
                 ]
@@ -56,14 +54,14 @@ class NLayerDiscriminator(nn.Module):
             map_update = map
             map = min(2 ** n, 8)
             model += [
-                spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map_update, ndf * map, kernel_size=3, stride=stride, padding=1, bias=use_bias)),
+                spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map_update, ndf * map, kernel_size=3, stride=2, padding=1, bias=use_bias)),
                 eval("nn.BatchNorm"+mode+"d")(ndf * map),
                 nn.LeakyReLU(0.2, True)
             ]
 
         for n in range(2):
             model += [
-                spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=stride, padding=1, bias=use_bias)),
+                spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=2, padding=1, bias=use_bias)),
                 eval("nn.BatchNorm"+mode+"d")(ndf * map),
                 nn.LeakyReLU(0.2, True)
                  ]
