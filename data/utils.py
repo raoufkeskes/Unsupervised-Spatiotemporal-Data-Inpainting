@@ -31,8 +31,8 @@ def getDataloaders(root, transform, occlusions=None, nb_frames=35, batch_size=4,
         pass
 
     # convert val_size , test_size to int
-    val_size  = int( len(dataset) * val_size  )
-    test_size = int( len(dataset) * test_size )
+    val_size  = int(len(dataset) * val_size)
+    test_size = int(len(dataset) * test_size)
 
     # construct dataloaders
     torch.manual_seed(1)
