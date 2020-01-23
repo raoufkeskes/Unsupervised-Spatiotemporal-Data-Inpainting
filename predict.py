@@ -6,6 +6,8 @@ import os
 import torch
 from utils import read_video, save_video
 
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -15,20 +17,19 @@ if __name__ == '__main__':
     file_names = sorted(os.listdir(args.path))
 
     mymodel = ResnetGenerator()
+    mymodel.to(device)
 
     os.makedirs(os.path.join("result"), exist_ok=True)
     mymodel.load_state_dict(torch.load(os.path.join("model_weight", 'best_weight.pt'),
                                        map_location=device)['G_state_dict'])
 
     mymodel.eval()
-    imgs_transforms = transforms.Compose([
-        transforms.Resize((64, 64)),
-        transforms.ToTensor()
-    ])
 
     for i in range(len(file_names)):
-        video = read_video(file_names[i])
+        video = read_video(os.path.join(args.path, file_names[i]), inference=True).to(device)
         with torch.no_grad():
-            flow = mymodel(video)
-
-        save_video(video.cpu().numpy(), os.path.join("result", file_names[i], '_filled.mp4'))
+            reconstructed = []
+            for j in range(video.size(0)):
+                reconstructed.append(mymodel(video[j][None]).cpu().numpy())
+        reconstructed = np.concatenate(reconstructed)
+        save_video(reconstructed, os.path.join("result", file_names[i], '_filled.avi'))
