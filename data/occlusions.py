@@ -20,7 +20,7 @@ class RainDrops(Occlusion):
     """
     Simulate rain
     """
-    def __init__(self, number=None, positions=None, width=1.0/64, height=None, speed=None, output_size=(64, 64) , mask_code = -100 ):
+    def __init__(self, number=30, positions=None, width=1.0/64, height=None, speed=0.07, output_size=(64, 64) , mask_code = -100 ):
 
         """
         :param number     : int  => number of raindrops ( vertical lines )
@@ -90,7 +90,7 @@ class RemovePixels(Occlusion):
     """
     Simulates severe damages on vintage films
     """
-    def __init__(self, threshold=0.1 , mask_code = -100) :
+    def __init__(self, threshold=0.6 , mask_code = -100) :
         self.threshold = threshold
         self.mask_code = mask_code
 

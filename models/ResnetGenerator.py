@@ -146,9 +146,9 @@ class ResnetGenerator(nn.Module):
         """
         :param y : Tensor ( Channels x Time x H x W ) corrupted video
         :return  x_hat : Tensor ( Channels x Time x H x W ) reconstructed video
-        """
-        mask     = y >= 0
-        mask_bar = y < 0
+        # """
+        mask     = (y >= 0).int().to(device)
+        mask_bar = (y < 0).int().to(device)
         return  self.model(y) * mask_bar + y * mask
 
 
