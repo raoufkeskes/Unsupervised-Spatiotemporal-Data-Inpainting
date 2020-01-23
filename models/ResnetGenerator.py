@@ -124,12 +124,18 @@ class ResnetGenerator(nn.Module):
         super().__init__()
 
         self.model = nn.Sequential(
+            # Encoder
             ResnetBlock(input_nc, ngf, norm_layer=norm_layer),
             ResnetBlock(ngf, ngf * 16, norm_layer=norm_layer),
+            ResnetBlock( ngf * 16 , ngf * 16, norm_layer=norm_layer ),
+            # Decoder
+            # Resnet Chunk 1
             ResnetBlock(ngf * 16, ngf * 8, norm_layer=norm_layer),
             ResnetBlock(ngf * 8, ngf * 4, norm_layer=norm_layer),
             ResnetBlock(ngf * 4, ngf * 2, norm_layer=norm_layer),
+            # Self Attention
             SelfAttention(ngf * 2),
+            # Resnet Chunk 2
             ResnetBlock(ngf * 2, ngf, norm_layer=norm_layer),
             norm_layer(ngf),
             nn.ReLU(),

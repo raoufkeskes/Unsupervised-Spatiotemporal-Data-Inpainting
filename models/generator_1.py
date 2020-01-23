@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils import spectral_norm
 
+# ssh -X 3702157@ssh.ufr-info-p6.jussieu.fr
+# ssh -X ppti-gpu-3
 
 class Block3d( nn.Module ):
     def __init__(self, in_channels, out_channels, bias=False, sn=True):
