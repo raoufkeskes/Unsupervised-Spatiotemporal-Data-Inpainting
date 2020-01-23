@@ -58,6 +58,7 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
     d_labels = 0
     for i, (y, _, idx) in enumerate(data):
         torch.cuda.empty_cache()
+        print(y.shape)
         y = y.to(device)
         with torch.set_grad_enabled(optimizer is not None):
             x_hat = generator(y)
@@ -123,7 +124,7 @@ if __name__ == '__main__':
         transforms.ToTensor()
     ])
 
-    train, val, test = getDataloaders(args.root, img_transforms, occlusions=[RainDrops()], nb_frames=args.num_frames,
+    train, val, test = getDataloaders(args.root, img_transforms, occlusions=[MovingBar()], nb_frames=args.num_frames,
                                       batch_size=args.batch_size, val_size=0.05, test_size=0.05)
 
     tb_occ_video_train = next(iter(train))[0]

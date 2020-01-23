@@ -68,11 +68,11 @@ class RainDrops(Occlusion):
 
                 pos = self.positions[i]
                 #mask x
-                mask_x = torch.arange(start=int(pos[0]), end=int(pos[0] + self.height[i])).cpu()
+                mask_x = torch.arange(start=int(pos[0]), end=int(pos[0] + self.height[i]),device=device)
                 #mask y
-                mask_y = torch.arange(start=int(pos[1]), end=int(pos[1] + self.width)).cpu()
+                mask_y = torch.arange(start=int(pos[1]), end=int(pos[1] + self.width),device=device)
                 grid_x, grid_y = torch.meshgrid(mask_x, mask_y)
-                frame = frame.cpu()
+                # frame = frame.cpu()
                 frame[:, grid_x%self.output_size[0] , grid_y%self.output_size[1]  ] = self.mask_code
                 frame.to(device)
 
@@ -96,13 +96,11 @@ class RemovePixels(Occlusion):
 
     def __call__(self, video ):
 
-        video_copy = video.clone()
         # uniform random sampling for each pixel through the whole video sequence
-        p = torch.rand(video_copy.shape)
+        p = torch.rand(video.shape)
         # affect mask_code  to the selected pixels
-        video_copy[p <= self.threshold] = self.mask_code
-
-        return video_copy
+        video[p <= self.threshold] = self.mask_code
+        return video.transpose_(0,1)
 
 
 
@@ -115,13 +113,13 @@ class MovingBar(Occlusion):
 
         # if data is not given create random stuff
         if(position is None ) :
-            position = np.random.rand(2)
+            position = [0.0,0.0] #np.random.rand(2)
         if ( width is None ) :
-            width = np.random.rand()
+            width = 0.1 #np.random.rand()
         if ( height is None ) :
-            height = np.random.rand()
+            height = 1.0 #np.random.rand()
         if ( speed is None ) :
-            speed = np.random.rand()
+            speed = 0.05  #np.random.rand()
 
         # convert [0,1] scale to pixels language
         position = torch.round(torch.tensor(position) * output_size[0]).int()
@@ -143,7 +141,6 @@ class MovingBar(Occlusion):
         nbr_frames = 0
         for frame in video :
 
-            frame_copy = frame.clone()
             pos = self.position
 
             #mask x
@@ -152,10 +149,10 @@ class MovingBar(Occlusion):
             mask_y = torch.arange(start=int(pos[1]), end=int(pos[1] + self.width))
 
             grid_x, grid_y = torch.meshgrid(mask_x,mask_y)
-            frame_copy[:, grid_x%self.output_size[0] , grid_y%self.output_size[1] ] = self.mask_code
+            frame[:, grid_x%self.output_size[0] , grid_y%self.output_size[1] ] = self.mask_code
 
             # append the frame
-            video_tensor.append(frame_copy.unsqueeze(0))
+            video_tensor.append(frame.unsqueeze(0))
 
             # next starting X position = current X position + speed
             self.position[1] += self.speed
