@@ -18,7 +18,6 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 occ_list = [RainDrops(), RemovePixels(), MovingBar()]
 
 
-
 class AverageMeter(object):
 
     def __init__(self):
@@ -56,26 +55,60 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
     avg_batch_time = AverageMeter()
 
     tic = time.time()
+
+    # when d_labels==0 we are optimizing the discriminators. when d_labels==1 we are optimizing the generator.
     d_labels = 0
     for i, (y, _, idx) in enumerate(data):
         torch.cuda.empty_cache()
         y = y.to(device)
         with torch.set_grad_enabled(optimizer is not None):
             x_hat = generator(y)
+            # get the occlusion object used to generate y.
             occ = occ_list[idx[0].item()]
+
+            # apply occlusion on each batch in x_hat. Since the occlusion object does not expect a batch, we need to
+            # loop.
             y_hat = []
-            for b in range(y.size(0)):
-                y_hat.append(occ(x_hat[b].transpose(0, 1))[None])
+            for j in range(y.size(0)):
+                y_hat.append(occ(x_hat[j].transpose(0, 1))[None])
             y_hat = torch.cat(y_hat).to(device)
             y_hat.transpose_(1, 2)
+
+            # get the training labels used as target in our GAN loss. Since the Discriminator and the generator have
+            # opposite objectives, ascending and descending respectively. The real and fake labels depends on whether we
+            # are now optimizing Ds, Df or G. Therefore, the labels depend on d_labels.
             label_real = torch.full((y.size(0),), 1 - d_labels, device=device)
             label_fake = torch.full((y.size(0),), d_labels, device=device)
-            loss = criterion(discriminator_s(y).view(-1), label_real) + criterion(discriminator_s(y_hat).view(-1),
-                                                                                  label_fake)
+
+            # Note: when optimizing the generator weights. We want the discriminator to ONLY know that generated videos
+            # are real. Whereas, when optimizing the discriminator weights, we want it to know that generated videos
+            # are indeed  fake AND to to know that real videos are indeed real. That's why only one BCELoss is needed
+            # when optimizing the generator weights.
+            loss = 0
+            # 1st term of the loss: BCE on the output of the frames discriminator.
             for j in range(y.size(2)):
-                loss += criterion(discriminator_f(y[:, :, j]).view(-1), label_real) + \
-                        criterion(discriminator_f(y_hat[:, :, j]).view(-1), label_fake)
-            loss *= 1/y.size(2)
+                loss += criterion(discriminator_f(y_hat[:, :, j]).view(-1), label_fake)
+                if d_labels == 0:
+                    loss += criterion(discriminator_f(y[:, :, j]).view(-1), label_real)
+
+            # 2nd term of the loss: BCE on the output of the frames discriminator given the differences in frames this
+            # time.
+            if type(occ).__name__ != "RemovePixels":
+                y_hat_diff = y_hat[:, :, 1:] - y_hat[:, :, :-1]
+                y_diff = y[:, :, 1:] - y[:, :, :-1]
+                for j in range(y_diff.size(2)):
+                    loss += criterion(discriminator_f(y_hat[:, :, j]).view(-1), label_fake)
+                    if d_labels == 0:
+                        loss += criterion(discriminator_f(y[:, :, j]).view(-1), label_real)
+
+            # reducing over the number of frames
+            loss *= 1 / y.size(2)
+
+            # 3rd term of the loss: BCE on the output of the sequence discriminator
+            loss += criterion(discriminator_s(y_hat).view(-1),label_fake)
+            if d_labels == 0:
+                loss += criterion(discriminator_s(y).view(-1), label_real)
+
         if optimizer is not None:
             optimizer[d_labels].zero_grad()
             loss.backward()
@@ -104,29 +137,42 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
 
 if __name__ == '__main__':
 
+    # Input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', default="../datasets/FaceForensics/", type=str, metavar='DIR', help='path to dataset')
     parser.add_argument('--epochs', default=200, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--batch_size', default=2, type=int, metavar='N', help='mini-batch size (default: 2)')
     parser.add_argument('--num_frames', default=4, type=int, metavar='N', help='number of frames (default: 35)')
     parser.add_argument('--lr', default=1e-4, type=float, metavar='LR', help='learning rate')
-    # parser.add_argument("--augment", help="perform data augmentation", action="store_true")
 
     args = parser.parse_args()
+
+    # Defining the GAN: generator, discriminator for sequence and discriminator for frames
     G = ResnetGenerator.define_G(3, 3, 64)
     Ds = Discriminator.define_D('3', 3, 64)
     Df = Discriminator.define_D('2', 3, 64)
+
+    # Defining the optimizers: One for the generator and one for the discriminators since they have different
+    # param updates
     optimG = torch.optim.Adam(G.parameters(), args.lr, betas=(0.99, 0.99))
     optimD = torch.optim.Adam(list(Ds.parameters()) + list(Df.parameters()), args.lr, betas=(0.99, 0.99))
+
+    # Define the GAN vanilla loss binary cross entropy. And since the generator output is not a Sigmoid we use
+    # BCEWithLogitsLoss
     loss_func = nn.BCEWithLogitsLoss()
+
+    # Basic resizing, normalization and channel transpose transforms
     img_transforms = transforms.Compose([
         transforms.Resize((64, 64)),
         transforms.ToTensor()
     ])
 
+    # get train, validation and test Dataloaders objects from a given dataset, using a given occlusion function.
     train, val, test = getDataloaders(args.root, img_transforms, occlusions=[MovingBar()], nb_frames=args.num_frames,
                                       batch_size=args.batch_size, val_size=0.05, test_size=0.05)
 
+    # sample frames for which we keep track of the qualitative results on Tensorboard. Keep one from each set:
+    # validation, train and test.
     tb_occ_video_train = next(iter(train))[0]
     tb_occ_video_val = next(iter(val))[0]
     tb_occ_video_test = next(iter(test))[0]
@@ -134,10 +180,14 @@ if __name__ == '__main__':
     tb_occ_video_val = tb_occ_video_val[0:1].to(device)
     tb_occ_video_test = tb_occ_video_test[0:1].to(device)
 
+    # Create directoris if they don't already exist of:
+    # Checkpoint to save training state at each epoch. model_weight to save the generator weights that give the best
+    # loss on the validation set. And runs, to save the loggs for the tensoboard.
     os.makedirs(os.path.join("Checkpoints"), exist_ok=True)
     os.makedirs(os.path.join("model_weight"), exist_ok=True)
     tb = SummaryWriter(os.path.join("runs"), flush_secs=20)
 
+    # Check if checkpoint exist to continue training.
     starting_epoch = 0
     best_loss = 100000
     if os.path.exists(os.path.join("Checkpoints", 'training_state.pt')):
@@ -150,12 +200,15 @@ if __name__ == '__main__':
         starting_epoch = checkpoint['epoch']
         best_loss = checkpoint['best_loss']
 
+    # start/continue training for a given number of epochs
     for e in range(starting_epoch, args.epochs):
 
         print("=================\n=== EPOCH " + str(e + 1) + " =====\n=================\n")
 
+        # return the averaged losses after doing one pass through the whole training data.
         loss_generator, loss_discriminator = epoch(G, Ds, Df, train, loss_func, (optimD, optimG))
 
+        # Save a checkpoint.
         torch.save({
             'epoch': e,
             'G_state_dict': G.state_dict(),
@@ -168,6 +221,7 @@ if __name__ == '__main__':
 
         loss_generator_val, loss_discriminator_val = epoch(G, Ds, Df, val, loss_func)
 
+        # Save generator weights if we have a better validation loss.
         if loss_generator_val < best_loss:
             best_loss = loss_generator_val
             torch.save({
@@ -179,6 +233,8 @@ if __name__ == '__main__':
             }, os.path.join("model_weight", 'best_weight.pt'))
 
         loss_generator_test, loss_discriminator_test = epoch(G, Ds, Df, test, loss_func)
+
+        # Display to tensorboard the generator performance on sampled we saved.
         with torch.no_grad():
             G.eval()
 
@@ -194,6 +250,7 @@ if __name__ == '__main__':
             filled_video.transpose_(1, 2)
             tb.add_video('test', filled_video, e)
 
+        # plot the losses of train, validation and test sets.
         tb.add_scalars('Generator', {"train": loss_generator, "val": loss_generator_val, "test": loss_generator_test},
                        e)
         tb.add_scalars('Discriminator', {"train": loss_discriminator, "val": loss_discriminator_val,
