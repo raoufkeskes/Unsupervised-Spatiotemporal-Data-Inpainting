@@ -63,10 +63,8 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
             x_hat = generator(y)
             occ = occ_list[idx[0].item()]
             y_hat = []
-            print(torch.cuda.memory_allocated())
             for b in range(y.size(0)):
                 y_hat.append(occ(x_hat[b].transpose(0, 1))[None])
-            print(torch.cuda.memory_allocated())
             y_hat = torch.cat(y_hat).to(device)
             y_hat.transpose_(1, 2)
             label_real = torch.full((y.size(0),), 1 - d_labels, device=device)
@@ -106,7 +104,7 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root', default="../datasets/KTH/", type=str, metavar='DIR', help='path to dataset')
+    parser.add_argument('--root', default="../datasets/FaceForensics/", type=str, metavar='DIR', help='path to dataset')
     parser.add_argument('--epochs', default=200, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--batch_size', default=2, type=int, metavar='N', help='mini-batch size (default: 2)')
     parser.add_argument('--num_frames', default=5, type=int, metavar='N', help='number of frames (default: 35)')
@@ -184,15 +182,15 @@ if __name__ == '__main__':
             G.eval()
 
             filled_video = G(tb_occ_video_train)
-            filled_video.tranpose_(1, 2)
+            filled_video.transpose_(1, 2)
             tb.add_video('train', filled_video, e)
 
             filled_video = G(tb_occ_video_val)
-            filled_video.tranpose_(1, 2)
+            filled_video.transpose_(1, 2)
             tb.add_video('val', filled_video, e)
 
             filled_video = G(tb_occ_video_test)
-            filled_video.tranpose_(1, 2)
+            filled_video.transpose_(1, 2)
             tb.add_video('test', filled_video, e)
 
         tb.add_scalars('Generator', {"train": loss_generator, "val": loss_generator_val, "test": loss_generator_test},
