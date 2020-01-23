@@ -30,8 +30,6 @@ train_loader, val_loader, test_loader = getDataloaders ("../../datasets/KTH/", n
 
 
 for x_train_batch, y_train_batch, occ_ix in train_loader :
-
-    print(occ_ix)
     # to device
     x_train_batch, y_train_batch = x_train_batch.to(device), y_train_batch.to(device)
 
@@ -39,21 +37,21 @@ for x_train_batch, y_train_batch, occ_ix in train_loader :
 
 
 # create instance of generator with define_G , ndf = 32 :
-netG = ResnetGenerator( 64, 3, 3 ).to( device )
+G = define_G(3, 3, 64)
 
-output = netG(y_train_batch.transpose(1,2))
+output = G(y_train_batch)
 
 print(output.shape)
 # #
-# # # untransform your video before saving it to get
-# untransformed_video = output[0].detach().transpose(0,1).cpu() *255
+# # untransform your video before saving it to get
+untransformed_video = output[0].detach().transpose(0,1).cpu() *255
+
+print(untransformed_video.min())
 #
-# print(untransformed_video.min())
-# #
-# #
-# print(untransformed_video.shape)
 #
-# write_video(  untransformed_video , "../outputs/tmp","temp.mp4" )
+print(untransformed_video.shape)
+
+write_video(  untransformed_video , "../outputs/tmp","temp.mp4" )
 
 
 
