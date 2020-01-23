@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 wget-log*
+tmp_cmds.txt
 
 
 
