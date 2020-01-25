@@ -59,6 +59,7 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
     # when d_labels==0 we are optimizing the discriminators. when d_labels==1 we are optimizing the generator.
     d_labels = 0
     for i, (y, _, idx) in enumerate(data):
+        print("y shape: ",y.shape)
         torch.cuda.empty_cache()
         y = y.to(device)
         with torch.set_grad_enabled(optimizer is not None):
@@ -73,6 +74,7 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
                 y_hat.append(occ(x_hat[j].transpose(0, 1))[None])
             y_hat = torch.cat(y_hat).to(device)
             y_hat.transpose_(1, 2)
+            print("y_hat shape:", y_hat.shape)
 
             # get the training labels used as target in our GAN loss. Since the Discriminator and the generator have
             # opposite objectives, ascending and descending respectively. The real and fake labels depends on whether we
@@ -86,6 +88,7 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
             # when optimizing the generator weights.
             loss = 0
             # 1st term of the loss: BCE on the output of the frames discriminator.
+            print("working on frames loss")
             for j in range(y.size(2)):
                 loss += criterion(discriminator_f(y_hat[:, :, j]).view(-1), label_fake)
                 if d_labels == 0:
@@ -93,19 +96,23 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
 
             # 2nd term of the loss: BCE on the output of the frames discriminator given the differences in frames this
             # time.
+
             if type(occ).__name__ != "RemovePixels":
+                print("working on diff frames loss")
                 y_hat_diff = y_hat[:, :, 1:] - y_hat[:, :, :-1]
                 y_diff = y[:, :, 1:] - y[:, :, :-1]
+                print("y_hat_diff shape: ", y_hat_diff.shape)
+
                 for j in range(y_diff.size(2)):
-                    loss += criterion(discriminator_f(y_hat[:, :, j]).view(-1), label_fake)
+                    loss += criterion(discriminator_f(y_hat_diff[:, :, j]).view(-1), label_fake[1:])
                     if d_labels == 0:
-                        loss += criterion(discriminator_f(y[:, :, j]).view(-1), label_real)
+                        loss += criterion(discriminator_f(y_diff[:, :, j]).view(-1), label_real[1:])
 
             # reducing over the number of frames
             loss *= 1 / y.size(2)
 
             # 3rd term of the loss: BCE on the output of the sequence discriminator
-            loss += criterion(discriminator_s(y_hat).view(-1),label_fake)
+            loss += criterion(discriminator_s(y_hat).view(-1), label_fake)
             if d_labels == 0:
                 loss += criterion(discriminator_s(y).view(-1), label_real)
 
@@ -139,10 +146,10 @@ if __name__ == '__main__':
 
     # Input arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root', default="../datasets/FaceForensics/", type=str, metavar='DIR', help='path to dataset')
+    parser.add_argument('--root', default="../datasets/KTH/", type=str, metavar='DIR', help='path to dataset')
     parser.add_argument('--epochs', default=200, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--batch_size', default=2, type=int, metavar='N', help='mini-batch size (default: 2)')
-    parser.add_argument('--num_frames', default=4, type=int, metavar='N', help='number of frames (default: 35)')
+    parser.add_argument('--num_frames', default=10, type=int, metavar='N', help='number of frames (default: 35)')
     parser.add_argument('--lr', default=1e-4, type=float, metavar='LR', help='learning rate')
 
     args = parser.parse_args()
