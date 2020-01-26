@@ -5,6 +5,12 @@ Therefore , this repository is about the implementation of an ICLR 2020 accepted
 
 The main idea of the paper is **to inpaint occlusions on geophysical and natural videos sequencies in a fully unsupervised context** , where they introduce GANs paradigm in their architectures to solve this problem from a probabilistic viewpoint .
 
+
+
+![alt text][logo]
+
+[logo]: https://i.ibb.co/bmK0LWc/Unsupervised-Inpainting-GAN-based.png 
+
 ## Requirements
 ``` pip install -r requirements.txt ```
 ## Usage 
@@ -19,7 +25,14 @@ the data will be stored on a folder ```datasets``` external to the project repo 
     ├── Unsupervised-Spatiotemporal-Data-Inpainting (our repo) 
     └── datasets
 ```
-* **FaceForensics** : download original videos (1000 youtube videos) and apply face recognition 
+* **FaceForensics** : This dataset contains 1000 videos of non-occluded facemovements on a static background ,
+two options are available to get the data   
+    * download extracted faces ready to use : 
+    ```  bash data/scripts/download_preprocess_FaceForensics.sh ```
+    *  download original videos (1000 youtube videos) and apply face recognition  from scratch (it could take a while many hours)
+    ```  bash data/scripts/download_preprocess_FaceForensics.sh from_scratch```
+
+* **KTH** : A human action dataset containing 2391 video clips of 6 human actions, to get it just execute the corresponding script 
 ```  bash data/scripts/download_preprocess_FaceForensics.sh ```
 
 ### Metrics

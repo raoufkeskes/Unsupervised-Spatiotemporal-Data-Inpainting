@@ -7,7 +7,7 @@
 SCRIPTPATH="$( cd "$(dirname "$0")" || exit ; pwd -P )"
 
 # KTH : Human Actions Dataset
-TARGET_DIR=$SCRIPTPATH/../../../datasets/KTH
+TARGET_DIR=${SCRIPTPATH%/Unsupervised-Spatiotemporal-Data-Inpainting/*}/datasets/KTH
 
 DOMAIN='http://www.nada.kth.se'
 path='/cvap/actions'
