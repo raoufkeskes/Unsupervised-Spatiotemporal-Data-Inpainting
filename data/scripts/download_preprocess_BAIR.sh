@@ -24,10 +24,10 @@ BASE_URL="$DOMAIN$path"
 ##wget -nc -O ${FILENAME} "${BASE_URL}/${FILENAME}"
 #
 #echo $FILENAME
-tar -xvf $SCRIPTPATH/${FILENAME}  -C ${TARGET_DIR} --strip-components=1
+#tar -xvf $SCRIPTPATH/${FILENAME}  -C $SCRIPTPATH
+
 ##rm -f ${FILENAME}
-
-
+python $SCRIPTPATH/preprocess_BAIR.py --out_dir="${TARGET_DIR}"
 
 echo '------------'
 echo 'BAIR  DONE !'

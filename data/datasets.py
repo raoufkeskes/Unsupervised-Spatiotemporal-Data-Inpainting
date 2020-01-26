@@ -7,7 +7,7 @@ import torch
 import numpy as np
 import cv2
 from PIL import Image
-
+import tensorflow as tf
 
 # utils
 import os
@@ -117,3 +117,4 @@ class KTH_Dataset(MotherDataset):
         self.filenames = os.listdir(root_dir)
 
 
+    

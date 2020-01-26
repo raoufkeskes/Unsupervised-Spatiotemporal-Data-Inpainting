@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 wget-log*
 tmp_cmds.txt
-
+*.tfrecords
 
 
 

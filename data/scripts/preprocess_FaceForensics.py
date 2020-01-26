@@ -41,12 +41,10 @@ def FaceRecognition(rgb_frame , output_size =(64,64) , extend=60 ):
 def main(args):
 
     global face_locations
-    dataset = args.dataset
+    path = args.dataset_path
     extend  = args.extend
     output_size =(64,64)
 
-    root = "../datasets/"
-    path = root + str(dataset)
     filenames = os.listdir(path)
 
     count_file = 0
@@ -62,7 +60,7 @@ def main(args):
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             output_movie = cv2.VideoWriter(path + "/tmp/"+filename, fourcc, fps , output_size)
 
-            print(" Preprocessing {} ==> {} : video {}|{} ".format(dataset, filename, count_file, len(filenames)-1 ))
+            print(" Preprocessing {} ==> {} : video {}|{} ".format("FaceForensics", filename, count_file, len(filenames)-1 ))
 
             frame_number = 0
             while True:
@@ -73,10 +71,8 @@ def main(args):
                 # Quit when the input video file ends
                 if not ret:
                     break
-                if ( dataset=="FaceForensics") :
-                    img  = FaceRecognition ( frame[:,:,::-1]  , output_size ,  extend=extend )
-                else :
-                    img = "TO DO"
+
+                img  = FaceRecognition ( frame[:,:,::-1]  , output_size ,  extend=extend )
 
 
                 output_movie.write(img[:, :, ::-1])
@@ -92,7 +88,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dataset', default="FaceForensics", type=str, metavar='DATASET',
+    parser.add_argument('--dataset_path', default="fill this path please", type=str, metavar='DATASET',
                         help='dataset FaceForensics or KTH or SST or BAIR'  )
     parser.add_argument('--extend', default=60 , type=int, metavar='EXTEND',
                         help='number of pixels to extend while extracting the faces from the original video')
