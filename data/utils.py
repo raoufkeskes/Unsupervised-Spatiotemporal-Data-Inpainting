@@ -38,19 +38,18 @@ def getDataloaders(root, transform, occlusions=None, nb_frames=35, batch_size=4,
     torch.manual_seed(1)
     indices = torch.randperm(len(dataset)).tolist()
     train_idx, valid_idx, test_idx = indices[val_size + test_size:], indices[:val_size], indices[val_size:test_size + val_size]
-    train_sampler = SubsetRandomSampler(train_idx[:6])
-    val_sampler   = SubsetRandomSampler(valid_idx[:6])
-    test_sampler  = SubsetRandomSampler(test_idx[:6])
+    train_sampler = SubsetRandomSampler(train_idx)
+    val_sampler   = SubsetRandomSampler(valid_idx)
+    test_sampler  = SubsetRandomSampler(test_idx)
 
     train_loader = DataLoader(dataset, batch_size=batch_size, sampler=train_sampler,
-                              pin_memory=torch.cuda.is_available(), num_workers=0)
+                              pin_memory=torch.cuda.is_available(), num_workers=0,  drop_last=True)
     val_loader = DataLoader(dataset, batch_size=batch_size, sampler=val_sampler,
-                            pin_memory=torch.cuda.is_available(), num_workers=0)
+                            pin_memory=torch.cuda.is_available(), num_workers=0,  drop_last=True)
     test_loader = DataLoader(dataset, batch_size=batch_size, sampler=test_sampler,
-                             pin_memory=torch.cuda.is_available(), num_workers=0)
+                             pin_memory=torch.cuda.is_available(), num_workers=0, drop_last=True)
 
     return train_loader, val_loader, test_loader
-
 
 
 

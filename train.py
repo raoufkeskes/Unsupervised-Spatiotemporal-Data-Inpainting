@@ -39,7 +39,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimizer=None):
+def epoch(generator, discriminator_s, discriminator_f, data, criterion, L1=None, optimizer=None):
     if optimizer is None:
         generator.eval()
         discriminator_s.eval()
@@ -56,25 +56,29 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
 
     tic = time.time()
 
+
     # when d_labels==0 we are optimizing the discriminators. when d_labels==1 we are optimizing the generator.
     d_labels = 0
-    for i, (y, _, idx) in enumerate(data):
-        print("y shape: ",y.shape)
+    for i, (y, x, idx) in enumerate(data):
         torch.cuda.empty_cache()
         y = y.to(device)
+        x = x.to(device)
         with torch.set_grad_enabled(optimizer is not None):
             x_hat = generator(y)
+
+
             # get the occlusion object used to generate y.
             occ = occ_list[idx[0].item()]
 
-            # apply occlusion on each batch in x_hat. Since the occlusion object does not expect a batch, we need to
+            # apply occlusion on each video in x_hat. Since the occlusion object does not expect a batch, we need to
             # loop.
-            y_hat = []
-            for j in range(y.size(0)):
-                y_hat.append(occ(x_hat[j].transpose(0, 1))[None])
-            y_hat = torch.cat(y_hat).to(device)
-            y_hat.transpose_(1, 2)
-            print("y_hat shape:", y_hat.shape)
+            # y_hat = []--------------------------------------------------------------
+            # for j in range(y.size(0)):
+            #     y_hat.append(occ(x_hat[j].transpose(0, 1))[None])
+            # y_hat = torch.cat(y_hat).to(device)
+            # y_hat.transpose_(1, 2)
+            # print("y_hat shape:", y_hat.shape)
+
 
             # get the training labels used as target in our GAN loss. Since the Discriminator and the generator have
             # opposite objectives, ascending and descending respectively. The real and fake labels depends on whether we
@@ -88,33 +92,32 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, optimize
             # when optimizing the generator weights.
             loss = 0
             # 1st term of the loss: BCE on the output of the frames discriminator.
-            print("working on frames loss")
             for j in range(y.size(2)):
-                loss += criterion(discriminator_f(y_hat[:, :, j]).view(-1), label_fake)
+                loss += criterion(discriminator_f(x_hat[:, :, j]).view(-1), label_fake)
                 if d_labels == 0:
-                    loss += criterion(discriminator_f(y[:, :, j]).view(-1), label_real)
+                    loss += criterion(discriminator_f(x[:, :, j]).view(-1), label_real)
 
             # 2nd term of the loss: BCE on the output of the frames discriminator given the differences in frames this
             # time.
 
             if type(occ).__name__ != "RemovePixels":
-                print("working on diff frames loss")
-                y_hat_diff = y_hat[:, :, 1:] - y_hat[:, :, :-1]
-                y_diff = y[:, :, 1:] - y[:, :, :-1]
-                print("y_hat_diff shape: ", y_hat_diff.shape)
+                x_hat_diff = x_hat[:, :, 1:] - x_hat[:, :, :-1]
+                x_diff = x[:, :, 1:] - x[:, :, :-1]
 
-                for j in range(y_diff.size(2)):
-                    loss += criterion(discriminator_f(y_hat_diff[:, :, j]).view(-1), label_fake[1:])
+                for j in range(x_diff.size(2)):
+                    loss += criterion(discriminator_f(x_hat_diff[:, :, j]).view(-1), label_fake)
                     if d_labels == 0:
-                        loss += criterion(discriminator_f(y_diff[:, :, j]).view(-1), label_real[1:])
+                        loss += criterion(discriminator_f(x_diff[:, :, j]).view(-1), label_real)
 
             # reducing over the number of frames
             loss *= 1 / y.size(2)
 
             # 3rd term of the loss: BCE on the output of the sequence discriminator
-            loss += criterion(discriminator_s(y_hat).view(-1), label_fake)
+            loss += criterion(discriminator_s(x_hat).view(-1), label_fake)
             if d_labels == 0:
-                loss += criterion(discriminator_s(y).view(-1), label_real)
+                loss += criterion(discriminator_s(x).view(-1), label_real)
+            if d_labels == 1:
+                loss += L1(x,x_hat)
 
         if optimizer is not None:
             optimizer[d_labels].zero_grad()
@@ -147,17 +150,17 @@ if __name__ == '__main__':
     # Input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', default="../datasets/KTH/", type=str, metavar='DIR', help='path to dataset')
-    parser.add_argument('--epochs', default=200, type=int, metavar='N', help='number of total epochs to run')
+    parser.add_argument('--epochs', default=100, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--batch_size', default=2, type=int, metavar='N', help='mini-batch size (default: 2)')
-    parser.add_argument('--num_frames', default=10, type=int, metavar='N', help='number of frames (default: 35)')
+    parser.add_argument('--num_frames', default=8, type=int, metavar='N', help='number of frames (default: 35)')
     parser.add_argument('--lr', default=1e-4, type=float, metavar='LR', help='learning rate')
 
     args = parser.parse_args()
 
     # Defining the GAN: generator, discriminator for sequence and discriminator for frames
-    G = ResnetGenerator.define_G(3, 3, 64)
-    Ds = Discriminator.define_D('3', 3, 64)
-    Df = Discriminator.define_D('2', 3, 64)
+    G = ResnetGenerator.define_G(3, 3, 32)
+    Ds = Discriminator.define_D('3', 3, 32)
+    Df = Discriminator.define_D('2', 3, 32)
 
     # Defining the optimizers: One for the generator and one for the discriminators since they have different
     # param updates
@@ -213,7 +216,7 @@ if __name__ == '__main__':
         print("=================\n=== EPOCH " + str(e + 1) + " =====\n=================\n")
 
         # return the averaged losses after doing one pass through the whole training data.
-        loss_generator, loss_discriminator = epoch(G, Ds, Df, train, loss_func, (optimD, optimG))
+        loss_generator, loss_discriminator = epoch(G, Ds, Df, train, loss_func, L1=nn.L1Loss(), optimizer=(optimD, optimG))
 
         # Save a checkpoint.
         torch.save({
@@ -226,7 +229,7 @@ if __name__ == '__main__':
             'optimizerD_state_dict': optimD.state_dict()
         }, os.path.join("Checkpoints", 'training_state.pt'))
 
-        loss_generator_val, loss_discriminator_val = epoch(G, Ds, Df, val, loss_func)
+        loss_generator_val, loss_discriminator_val = epoch(G, Ds, Df, val, loss_func, L1 =nn.L1Loss())
 
         # Save generator weights if we have a better validation loss.
         if loss_generator_val < best_loss:
@@ -239,7 +242,7 @@ if __name__ == '__main__':
                 'loss_generator': loss_generator, 'loss_discriminator': loss_discriminator
             }, os.path.join("model_weight", 'best_weight.pt'))
 
-        loss_generator_test, loss_discriminator_test = epoch(G, Ds, Df, test, loss_func)
+        loss_generator_test, loss_discriminator_test = epoch(G, Ds, Df, test, loss_func, L1=nn.L1Loss())
 
         # Display to tensorboard the generator performance on sampled we saved.
         with torch.no_grad():
