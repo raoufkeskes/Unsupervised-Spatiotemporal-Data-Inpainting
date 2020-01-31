@@ -250,14 +250,17 @@ if __name__ == '__main__':
 
             filled_video = G(tb_occ_video_train)
             filled_video.transpose_(1, 2)
+            filled_video = (filled_video + 1)/2.
             tb.add_video('train', filled_video, e)
 
             filled_video = G(tb_occ_video_val)
             filled_video.transpose_(1, 2)
+            filled_video = (filled_video + 1)/2.
             tb.add_video('val', filled_video, e)
 
             filled_video = G(tb_occ_video_test)
             filled_video.transpose_(1, 2)
+            filled_video = (filled_video + 1)/2.
             tb.add_video('test', filled_video, e)
 
         # plot the losses of train, validation and test sets.
