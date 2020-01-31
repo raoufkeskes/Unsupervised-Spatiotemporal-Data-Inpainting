@@ -42,32 +42,35 @@ class NLayerDiscriminator(nn.Module):
         """
         super(NLayerDiscriminator, self).__init__()
 
-        model = [spectral_norm(eval("nn.Conv"+mode+"d")(input_nc, ndf, kernel_size=3, stride=2, padding=1)),
-                 eval("nn.BatchNorm"+mode+"d")(ndf),
+        s = (1, 2, 2) if mode=='3' else 2
+        s_t = (1, 1, 1) if mode=='3' else 1
+        k = (3, 3, 3) if mode=='3' else 3
+        p = (1, 1, 1) if mode=='3' else 1
+
+        model = [spectral_norm(eval("nn.Conv"+mode+"d")(input_nc, ndf, kernel_size=k, stride=s, padding=1)),
                  nn.LeakyReLU(0.2, True)
                 ]
 
         map = 1
         map_update = 1
 
-        for n in range(1,4):
+        for n in range(1, 3):
             map_update = map
             map = min(2 ** n, 8)
             model += [
-                spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map_update, ndf * map, kernel_size=3, stride=2, padding=1, bias=use_bias)),
-                eval("nn.BatchNorm"+mode+"d")(ndf * map),
+                spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map_update, ndf * map, kernel_size=k, stride=s, padding=p, bias=use_bias)),
                 nn.LeakyReLU(0.2, True)
             ]
 
-        for n in range(2):
-            model += [
-                spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=2, padding=1, bias=use_bias)),
-                eval("nn.BatchNorm"+mode+"d")(ndf * map),
-                nn.LeakyReLU(0.2, True)
-                 ]
+        map_update = map
+        map = min(2 ** 3, 8)
 
-        model += [spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map, ndf * map, kernel_size=3, stride=1, padding=1))]
-        model += [spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map, 1, kernel_size=3, stride=1, padding=1))]
+        model += [
+            spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map_update, ndf * map, kernel_size=k, stride=s_t, padding=p, bias=use_bias)),
+            nn.LeakyReLU(0.2, True)
+            ]
+
+        model += [spectral_norm(eval("nn.Conv"+mode+"d")(ndf * map, 1, kernel_size=k, stride=s_t, padding=p))]
 
         self.model = nn.Sequential(*model)
 
@@ -85,12 +88,12 @@ if __name__ == '__main__':
     print(' The input shape for df is : {}'.format(input_df.shape))
 
     # Define input for ds :
-    input_ds = torch.rand((2, 3, 35, 64, 64)).to(device)     # input = Batch_size , channels, frames, width , height
+    input_ds = torch.rand((2, 3, 5, 64, 64)).to(device)     # input = Batch_size , channels, frames, width , height
     print(' The input shape for ds is : {}'.format(input_ds.shape))
 
     # create instance of Discriminator(ds,df) with define_D, set the mode to '2','3', ndf = 32 :
-    netD2 = define_D('2', 3, 64)  #df
-    netD3 = define_D('3', 3, 64)  #ds
+    netD2 = define_D('2', 3, 32)  #df
+    netD3 = define_D('3', 3, 32)  #ds
 
     # check whether the model is on GPU , this function returns a boolean :
     print(' The model --mode : {} is on GPU : {}'.format(2, next(netD2.parameters()).is_cuda))

@@ -83,8 +83,9 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, L1=None,
             # get the training labels used as target in our GAN loss. Since the Discriminator and the generator have
             # opposite objectives, ascending and descending respectively. The real and fake labels depends on whether we
             # are now optimizing Ds, Df or G. Therefore, the labels depend on d_labels.
-            label_real = torch.full((y.size(0),), 1 - d_labels, device=device)
-            label_fake = torch.full((y.size(0),), d_labels, device=device)
+            df_hat = discriminator_f(x_hat[:, :, 0]).view(-1)
+            label_real = torch.full(df_hat.shape, 1 - d_labels, device=device)
+            label_fake = torch.full(df_hat.shape, d_labels, device=device)
 
             # Note: when optimizing the generator weights. We want the discriminator to ONLY know that generated videos
             # are real. Whereas, when optimizing the discriminator weights, we want it to know that generated videos
@@ -103,7 +104,9 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, L1=None,
             if type(occ).__name__ != "RemovePixels":
                 x_hat_diff = x_hat[:, :, 1:] - x_hat[:, :, :-1]
                 x_diff = x[:, :, 1:] - x[:, :, :-1]
-
+                df_diff = discriminator_f(x_diff[:, :, 0]).view(-1)
+                label_real = torch.full(df_diff.shape, 1 - d_labels, device=device)
+                label_fake = torch.full(df_diff.shape, d_labels, device=device)
                 for j in range(x_diff.size(2)):
                     loss += criterion(discriminator_f(x_hat_diff[:, :, j]).view(-1), label_fake)
                     if d_labels == 0:
@@ -113,11 +116,15 @@ def epoch(generator, discriminator_s, discriminator_f, data, criterion, L1=None,
             loss *= 1 / y.size(2)
 
             # 3rd term of the loss: BCE on the output of the sequence discriminator
-            loss += criterion(discriminator_s(x_hat).view(-1), label_fake)
+            ds = discriminator_s(x_hat).view(-1)
+            label_real = torch.full(ds.shape, 1 - d_labels, device=device)
+            label_fake = torch.full(ds.shape, d_labels, device=device)
+
+            loss += criterion(ds, label_fake)
             if d_labels == 0:
                 loss += criterion(discriminator_s(x).view(-1), label_real)
             if d_labels == 1:
-                loss += L1(x,x_hat)
+                loss += L1(x, x_hat)
 
         if optimizer is not None:
             optimizer[d_labels].zero_grad()
