@@ -63,21 +63,16 @@ fvd_score = m.fvd.getFVD(path_real, path_gen)
 ```
 
 
-                                 
+<!---                                 
 ## Notes
-
 TO DO
-
 ## Experiments and results 
-
 TO DO paper
-
 TO DO ours ( if we have time ) 
-
 ## Proposed improvements 
 for the paper : 
-
 for the implementation : 
+-->
 
 ## Licence 
 December , 2019
