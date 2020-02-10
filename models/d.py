@@ -7,8 +7,43 @@ import torch
 import torch.nn as nn
 import numpy as np
 from torch.nn.utils import spectral_norm
+from models.utils import *
+
 
 # Defines the PatchGAN discriminator with the specified arguments.
+
+def define_D2d(input_nc, ndf, init_gain=0.02, gpu_ids=[device], mode=2):
+    """Create a 'PatchGAN' discriminator
+
+    Parameters:
+        mode (str)         -- BatchNorm/conv dimension
+        input_nc (int)     -- the number of channels in input images
+        ndf (int)          -- the number of filters in the first conv layer
+        init_gain (float)  -- scaling factor for normal, xavier and orthogonal.
+        gpu_ids (int list) -- which GPUs the network runs on: e.g., 0,1,2
+
+    Returns a discriminator
+    """
+    net = NLayerDiscriminator(input_nc, ndf)
+    return init_net(net, mode, init_gain, gpu_ids)
+
+
+def define_D3d(input_nc, ndf, init_gain=0.02, gpu_ids=[device], mode=3):
+    """Create a 'PatchGAN' discriminator
+
+    Parameters:
+        mode (str)         -- BatchNorm/conv dimension
+        input_nc (int)     -- the number of channels in input images
+        ndf (int)          -- the number of filters in the first conv layer
+        init_gain (float)  -- scaling factor for normal, xavier and orthogonal.
+        gpu_ids (int list) -- which GPUs the network runs on: e.g., 0,1,2
+
+    Returns a discriminator
+    """
+    net = NLayerDiscriminator3d(input_nc, ndf)
+    return init_net(net, mode, init_gain, gpu_ids)
+
+
 class NLayerDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
 

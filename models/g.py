@@ -2,6 +2,27 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils import spectral_norm
+from models.utils import *
+
+def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_ids=[device], mode='3'):
+
+    """Create a generator
+
+    Parameters:
+        input_nc (int)        -- the number of channels in input images
+        output_nc (int)       -- the number of channels in output images
+        ngf (int)             -- the number of filters in the last conv layer
+        norm (str)            -- the name of normalization layers used in the network: 3D batch
+        init_gain (float)     -- scaling factor for normal
+        gpu_ids (int list)    -- which GPUs the network runs on: e.g., 0,1,2
+        mode (str)            -- BatchNorm/conv dimension
+
+    Returns a generator
+    """
+    norm_layer = norm
+    net = ResnetGenerator3d(input_nc, output_nc, ngf,norm_layer)
+
+    return init_net(net, mode, init_gain,gpu_ids)
 
 class Block3d(nn.Module):
     def __init__(self, in_channels, out_channels, bias=False, sn=True):
@@ -15,7 +36,7 @@ class Block3d(nn.Module):
 
         self.c1 = self.wrapper(nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1, bias=bias))
         self.c2 = self.wrapper(nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1, bias=bias))
-        self.c_sc = self.wrapper(nn.Conv3d( in_channels, out_channels, kernel_size=1, padding=0, bias=bias)) if in_channels != out_channels else nn.Identity()
+        self.c_sc = self.wrapper(nn.Conv3d(in_channels, out_channels, kernel_size=1, padding=0, bias=bias)) if in_channels != out_channels else nn.Identity()
 
     def forward(self, x):
         h = self.b1(x)
