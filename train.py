@@ -159,7 +159,7 @@ if __name__ == '__main__':
     parser.add_argument('--root', default="../datasets/KTH/", type=str, metavar='DIR', help='path to dataset')
     parser.add_argument('--epochs', default=100, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('--batch_size', default=2, type=int, metavar='N', help='mini-batch size (default: 2)')
-    parser.add_argument('--num_frames', default=8, type=int, metavar='N', help='number of frames (default: 35)')
+    parser.add_argument('--num_frames', default=5, type=int, metavar='N', help='number of frames (default: 35)')
     parser.add_argument('--lr', default=1e-4, type=float, metavar='LR', help='learning rate')
 
     args = parser.parse_args()
@@ -168,6 +168,13 @@ if __name__ == '__main__':
     G = ResnetGenerator2.define_G(3, 3, 32)
     Ds = Discriminator.define_D('3', 3, 32)
     Df = Discriminator.define_D('2', 3, 32)
+
+    print(G)
+    input_g = torch.rand((2, 3, 5, 64, 64)).to(device)  # input =[Batch_size , channels, frames width , height]
+
+    output_g = G(input_g)
+
+    print(output_g.shape)
 
     # Defining the optimizers: One for the generator and one for the discriminators since they have different
     # param updates

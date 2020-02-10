@@ -1,42 +1,11 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn.utils import spectral_norm
-import torch.nn.parallel
-from models.utils import *
-
-
-"""
-@author : Aissam Djahnine
-@date : 21/01/2020 02:18
-Inspired by CycleGan,Pix2Pix paper : https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix 
-"""
-
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-
-def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_ids=[device], mode='3'):
-
-    """Create a generator
-
-    Parameters:
-        input_nc (int)        -- the number of channels in input images
-        output_nc (int)       -- the number of channels in output images
-        ngf (int)             -- the number of filters in the last conv layer
-        norm (str)            -- the name of normalization layers used in the network: 3D batch
-        init_gain (float)     -- scaling factor for normal
-        gpu_ids (int list)    -- which GPUs the network runs on: e.g., 0,1,2
-        mode (str)            -- BatchNorm/conv dimension
-
-    Returns a generator
-    """
-    norm_layer = norm
-    net = ResnetGenerator2(input_nc, output_nc, ngf,norm_layer)
-
-    return init_net(net, mode, init_gain, gpu_ids)
-
 
 class Block3d(nn.Module):
     def __init__(self, in_channels, out_channels, bias=False, sn=True):
+
         super().__init__()
 
         self.b1 = nn.BatchNorm3d(num_features=in_channels)
@@ -46,8 +15,7 @@ class Block3d(nn.Module):
 
         self.c1 = self.wrapper(nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1, bias=bias))
         self.c2 = self.wrapper(nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1, bias=bias))
-        self.c_sc = self.wrapper(nn.Conv3d(in_channels, out_channels, kernel_size=1, padding=0,
-                                           bias=bias)) if in_channels != out_channels else nn.Identity()
+        self.c_sc = self.wrapper(nn.Conv3d( in_channels, out_channels, kernel_size=1, padding=0, bias=bias)) if in_channels != out_channels else nn.Identity()
 
     def forward(self, x):
         h = self.b1(x)
@@ -59,7 +27,6 @@ class Block3d(nn.Module):
         x = self.c_sc(x)
         return h + x
 
-
 class SelfAttention(nn.Module):
 
     def __init__(self, in_dim, sn=True):
@@ -69,11 +36,11 @@ class SelfAttention(nn.Module):
 
         self.conv_theta = self.wrapper(
             nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1))
-        self.conv_phi = self.wrapper(
+        self.conv_phi   = self.wrapper(
             nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1))
-        self.conv_g = self.wrapper(
+        self.conv_g     = self.wrapper(
             nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 2, kernel_size=1))
-        self.conv_attn = self.wrapper(
+        self.conv_attn  = self.wrapper(
             nn.Conv2d(in_channels=in_dim // 2, out_channels=in_dim, kernel_size=1))
 
         self.sigma = nn.Parameter(torch.zeros(1))
@@ -92,7 +59,7 @@ class SelfAttention(nn.Module):
         """
 
         mode_3d = x.dim() == 5
-
+        
         if mode_3d:
             batch_size_seq, nc, t, h, w = x.shape
             x = x.view(-1, nc, h, w)
@@ -124,13 +91,11 @@ class SelfAttention(nn.Module):
         out = x + self.sigma * attn_g
 
         if mode_3d:
-            print(batch_size_seq, nc,t,h,w)
             out = out.view(batch_size_seq, nc, t, h, w)
 
-        return out
+        return  out
 
-
-class ResnetGenerator2(nn.Module):
+class ResnetGenerator3d(nn.Module):
     def __init__(self, input_nc=3, output_nc=3, ngf=32, use_bias=True):
         super().__init__()
 
@@ -140,7 +105,7 @@ class ResnetGenerator2(nn.Module):
         self.blocks_3d = nn.Sequential(
             Block3d(input_nc, ngf),
             Block3d(ngf, ngf * 16),
-            Block3d(ngf * 16, ngf * 8),
+            Block3d(ngf * 16, ngf * 8), 
             Block3d(ngf * 8, ngf * 4),
             Block3d(ngf * 4, ngf * 2),
             SelfAttention(ngf * 2),
@@ -151,31 +116,6 @@ class ResnetGenerator2(nn.Module):
             nn.Tanh(),
         )
 
-    def forward(self, y):
-        mask = (y >= 0).float().to(device)
-        mask_bar = (y < 0).float().to(device)
-        return self.blocks_3d(y) * mask_bar + y * mask
 
-if __name__ == '__main__':
-    # test Generator :
-
-    input_g = torch.rand((2, 3, 5, 64, 64)).to(device)  # input =[Batch_size , channels, frames width , height]
-    print(' The input shape is : {}'.format(input_g.shape))
-
-    # create instance of generator with define_G , ngf = 64 :
-    netG = define_G(3, 3, 64)
-
-    # check whether the model is on GPU , this function returns a boolean :
-    print(' The model is on GPU : {}'.format(next(netG.parameters()).is_cuda))
-
-    # compute the output :
-    output_g = netG(input_g)
-
-    # check the output of netG : output = [Batch_size , channels, frames width , height]
-    print(' The output shape is : {}'.format(output_g.shape))
-
-    # calculate number of parameters for generator :
-    print('Number of Parameters is : {}'.format(sum(p.numel() for p in netG.parameters())))
-
-
-
+    def forward(self, x, mask):
+        return self.blocks_3d(x)

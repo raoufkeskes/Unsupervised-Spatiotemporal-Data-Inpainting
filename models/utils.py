@@ -31,7 +31,7 @@ def init_weights(net, mode, init_gain=0.02):
     net.apply(init_func)  # apply the initialization function <init_func>
 
 
-def init_net(net, mode, init_gain=0.02, gpu_ids=[0]):
+def init_net(net, mode, init_gain=0.02, gpu_ids=0):
 
     """Initialize a network:
 
