@@ -9,6 +9,7 @@ import numpy as np
 from torch.nn.utils import spectral_norm
 from models.utils import *
 
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 # Defines the PatchGAN discriminator with the specified arguments.
 

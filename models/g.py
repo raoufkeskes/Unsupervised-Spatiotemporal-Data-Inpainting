@@ -4,6 +4,9 @@ import torch.nn.functional as F
 from torch.nn.utils import spectral_norm
 from models.utils import *
 
+
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
 def define_G(input_nc, output_nc, ngf, norm=nn.BatchNorm3d, init_gain=0.02, gpu_ids=[device], mode='3'):
 
     """Create a generator
