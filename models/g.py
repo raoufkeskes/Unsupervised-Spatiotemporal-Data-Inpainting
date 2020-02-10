@@ -51,6 +51,7 @@ class Block3d(nn.Module):
         x = self.c_sc(x)
         return h + x
 
+"""
 class SelfAttention(nn.Module):
 
     def __init__(self, in_dim, sn=True):
@@ -75,11 +76,11 @@ class SelfAttention(nn.Module):
 
     def forward(self, x):
         """
-            inputs :
-                x : input feature maps( B X C X W X H)
-            returns :
-                out : self attention value + input feature
-                attention: B X N X N (N is Width*Height)
+            #inputs :
+             #   x : input feature maps( B X C X W X H)
+            #returns :
+             #   out : self attention value + input feature
+              #  attention: B X N X N (N is Width*Height)
         """
 
         mode_3d = x.dim() == 5
@@ -118,6 +119,58 @@ class SelfAttention(nn.Module):
             out = out.view(batch_size_seq, nc, t, h, w)
 
         return  out
+"""
+
+
+class SelfAttention(nn.Module):
+    """ Define a Self-attention Layer
+
+    Inspired from SAGAN paper
+
+    """
+    def __init__(self, in_dim):
+        super(SelfAttention, self).__init__()
+        self.chanel_in = in_dim
+
+        self.query_conv = spectral_norm(nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1))  # g(x)
+        self.key_conv = spectral_norm(nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1))    # f(x)
+        self.value_conv = spectral_norm(nn.Conv2d(in_channels=in_dim, out_channels=in_dim, kernel_size=1))       # h(x)
+
+        # Scale factor
+        self.gamma = nn.Parameter(torch.zeros(1))
+
+        self.softmax = nn.Softmax(dim=-1)
+
+    def forward(self,x):
+        """
+            inputs :
+                x : input feature maps( B X C X T X W X H)
+            returns :
+                out : self attention value + input feature
+                attention: B X N X N (with N = Width*Height)
+        """
+        batch_size, nc, t, width, height = x.size()
+        # reshaping x to [ batch_size* , nc , width , height ]
+        x = x.view(-1, nc, width, height)
+
+        m_batch_size, nc, width, height = x.size()
+
+        query = self.query_conv(x).view(m_batch_size, -1, width * height).permute(0, 2, 1)  # B X C X N
+        key = self.key_conv(x).view(m_batch_size, -1, width * height)                       # B X C x N
+        value = self.value_conv(x).view(m_batch_size, -1, width * height)                   # B X C X N
+
+        energy = torch.bmm(query, key)
+
+        attention = self.softmax(energy)  # B X N X N
+
+        out = torch.bmm(value, attention)
+
+        out = out.view(batch_size, nc, t, width, height)
+
+        out = self.gamma * out + x.view(batch_size, nc, t, width, height)
+
+        return out
+
 
 class ResnetGenerator3d(nn.Module):
     def __init__(self, input_nc=3, output_nc=3, ngf=32, use_bias=True):
