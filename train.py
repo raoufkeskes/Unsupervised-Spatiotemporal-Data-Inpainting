@@ -169,10 +169,10 @@ if __name__ == '__main__':
     G = g.define_G(3, 3, 32)
 
     #Ds = Discriminator.define_D('3', 3, 32)
-    Ds = Discriminator.define_D2d(3, 32, mode='3')
+    Ds = d.define_D3d(3, 32, mode='3')
 
     #Df = Discriminator.define_D('2', 3, 32)
-    Df = Discriminator.define_D3d(3, 32, mode='2')
+    Df = d.define_D2d(3, 32, mode='2')
 
 
     print(G)
