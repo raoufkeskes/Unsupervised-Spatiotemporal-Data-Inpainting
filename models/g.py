@@ -140,6 +140,7 @@ class ResnetGenerator3d(nn.Module):
             nn.Tanh(),
         )
 
-
-    def forward(self, x, mask):
-        return self.blocks_3d(x)
+    def forward(self, y):
+        mask = (y >= 0).int().to(device)
+        mask_bar = (y < 0).int().to(device)
+        return self.blocks_3d(y) * mask_bar + y * mask
