@@ -35,6 +35,10 @@ two options are available to get the data
 * **KTH** : A human action dataset containing 2391 video clips of 6 human actions, to get it just execute the corresponding script 
 ```  bash data/scripts/download_preprocess_FaceForensics.sh ```
 
+### Run training
+Depending on your ressources you have to adjust the number of frames (35 frames is the best number according to authors) 
+``` python train.py --root ../datasets/KTH/ --num_frames 10 ```
+
 ### Metrics
 #### FID: Frechet Inception Distance
 calculate the the Frechet Inception Distance (FID) given the batch size and the two paths to the dataset. Or, path_real can be the pre calculated mean and sigma of the real dataset.
