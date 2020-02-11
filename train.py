@@ -3,7 +3,7 @@ import time
 import torch
 import torch.nn as nn
 from data.utils import getDataloaders
-from models import ResnetGenerator2, Discriminator, g, d
+from models import ResnetGenerator, Discriminator
 from torch.utils.tensorboard import SummaryWriter
 import torchvision.transforms as transforms
 import numpy as np
@@ -165,22 +165,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Defining the GAN: generator, discriminator for sequence and discriminator for frames
-    #G = ResnetGenerator2.define_G(3, 3, 32)
-    G = g.define_G(3, 3, 32)
 
-    #Ds = Discriminator.define_D('3', 3, 32)
-    Ds = d.define_D3d(3, 32, mode='3')
-
-    #Df = Discriminator.define_D('2', 3, 32)
-    Df = d.define_D2d(3, 32, mode='2')
-
-
-    print(G)
-    input_g = torch.rand((2, 3, 5, 64, 64)).to(device)  # input =[Batch_size , channels, frames width , height]
-
-    output_g = G(input_g)
-
-    print(output_g.shape)
+    G = ResnetGenerator.define_G(3, 3, 32)
+    Ds = Discriminator.define_D('3', 3, 32)
+    Df = Discriminator.define_D('2', 3, 32)
 
     # Defining the optimizers: One for the generator and one for the discriminators since they have different
     # param updates
