@@ -5,6 +5,7 @@ from torchvision import transforms
 import os
 import torch
 from utils import read_video, save_video
+import opencv2
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
