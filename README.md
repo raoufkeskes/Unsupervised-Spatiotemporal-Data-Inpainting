@@ -1,7 +1,7 @@
 # Unsupervised-Spatiotemporal-Data-Inpainting
 Inpainting occlusions in images has been always a fascinating hard task for humans , the latter is harder when we extend it to videos and add a temporal axis . Researchers have been working on it for several decades achieving quite good results in a classical way but the texture was always not very smooth and somtimes blurry . However , recently with the success of "Deep Learning" , DL models have become ubiquitous in all tasks including **Inpainting** and especially GANs introduced in 2014 by 'Ian GOODFELLOW' inspired from Game theory which turn out to perform very well in this kind of problems .
 
-Therefore , this repository is about the implementation of an ICLR 2020 accepted paper : https://openreview.net/forum?id=rylqmxBKvH tackling this problem in **an unsupervised context** titled "Unsupervised Spatiotemporal Data Inpainting" where we aim to implement it from scratch and reproduce experiments and results .
+Therefore , this repository is about the implementation of an ICLR 2020 pending paper : https://openreview.net/forum?id=rylqmxBKvH tackling this problem in **an unsupervised context** titled "Unsupervised Spatiotemporal Data Inpainting" where we aim to implement it from scratch and reproduce experiments and results .
 
 The main idea of the paper is **to inpaint occlusions on geophysical and natural videos sequencies in a fully unsupervised context** , where they introduce GANs paradigm in their architectures to solve this problem from a probabilistic viewpoint .
 
@@ -66,6 +66,11 @@ import metrics as m
 fvd_score = m.fvd.getFVD(path_real, path_gen)
 ```
 
+## UPDATE October 2020
+Apparently the paper was rejected because they globally said that it was not fully unsupervised, since a hole or a missing part moves on the video, therefore the model was able to see some parts and it s not that unsupervised ... 
+Our personal review for their decision is : 
+- in natural life and geophysical videos we often have a moving obstacles (like a car passing on the road or a cloud moving and hiding some parts that were visible).
+- To us, not annotating ground truth videos is FULLY UNSUPERVISED learning.
 
 <!---                                 
 ## Notes
